@@ -1,0 +1,127 @@
+package com.example.habittracker.viewmodel
+
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.viewModelScope
+import com.example.habittracker.data.SavingsGoalRepository
+import com.example.habittracker.model.SavingsGoal
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import java.math.BigDecimal
+
+class SavingsGoalViewModel(
+    private val repository: SavingsGoalRepository
+) : ViewModel() {
+    private val _savingsGoals = MutableStateFlow<List<SavingsGoal>>(emptyList())
+    val savingsGoals: StateFlow<List<SavingsGoal>> = _savingsGoals.asStateFlow()
+
+    init {
+        refresh()
+    }
+
+    fun refresh() {
+        viewModelScope.launch {
+            _savingsGoals.value = withContext(Dispatchers.IO) {
+                repository.getSavingsGoals()
+                    .sortedWith(
+                        compareByDescending<SavingsGoal> { it.pinned }
+                            .thenBy { it.id }
+                    )
+            }
+        }
+    }
+
+    fun addSavingsGoal(name: String, targetAmountText: String): Boolean {
+        val normalizedName = name.trim()
+        if (normalizedName.isEmpty()) {
+            return false
+        }
+
+        val targetAmount = targetAmountText.trim().toBigDecimalOrNull()
+        if (targetAmount == null || targetAmount <= BigDecimal.ZERO) {
+            return false
+        }
+
+        viewModelScope.launch {
+            withContext(Dispatchers.IO) {
+                repository.upsertSavingsGoal(
+                    SavingsGoal(
+                        name = normalizedName,
+                        targetAmount = targetAmount
+                    )
+                )
+            }
+            refresh()
+        }
+        return true
+    }
+
+    fun deleteSavingsGoal(id: Long) {
+        viewModelScope.launch {
+            withContext(Dispatchers.IO) {
+                repository.deleteSavingsGoal(id)
+            }
+            refresh()
+        }
+    }
+
+    fun pinSavingsGoal(id: Long) {
+        viewModelScope.launch {
+            val goals = _savingsGoals.value
+            withContext(Dispatchers.IO) {
+                goals.forEach { goal ->
+                    repository.upsertSavingsGoal(goal.copy(pinned = goal.id == id))
+                }
+            }
+            refresh()
+        }
+    }
+
+    fun getGoalById(id: Long): SavingsGoal? {
+        return _savingsGoals.value.firstOrNull { it.id == id }
+    }
+
+    fun updateSavingsGoal(id: Long, name: String, targetAmountText: String): Boolean {
+        val existingGoal = _savingsGoals.value.firstOrNull { it.id == id } ?: return false
+        val normalizedName = name.trim()
+        if (normalizedName.isEmpty()) {
+            return false
+        }
+
+        val targetAmount = targetAmountText.trim().toBigDecimalOrNull()
+        if (targetAmount == null || targetAmount <= BigDecimal.ZERO) {
+            return false
+        }
+
+        viewModelScope.launch {
+            withContext(Dispatchers.IO) {
+                repository.upsertSavingsGoal(
+                    existingGoal.copy(
+                        name = normalizedName,
+                        targetAmount = targetAmount
+                    )
+                )
+            }
+            refresh()
+        }
+        return true
+    }
+
+    companion object {
+        fun factory(repository: SavingsGoalRepository): ViewModelProvider.Factory {
+            return object : ViewModelProvider.Factory {
+                @Suppress("UNCHECKED_CAST")
+                override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                    if (modelClass.isAssignableFrom(SavingsGoalViewModel::class.java)) {
+                        return SavingsGoalViewModel(repository) as T
+                    }
+                    throw IllegalArgumentException("Unknown ViewModel class: ${modelClass.name}")
+                }
+            }
+        }
+    }
+}
