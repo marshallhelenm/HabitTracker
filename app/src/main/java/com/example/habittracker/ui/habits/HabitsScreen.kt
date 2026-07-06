@@ -58,8 +58,6 @@ fun HabitsScreen(
                 onTitleChange = { formTitle = it },
                 description = formDescription,
                 onDescriptionChange = { formDescription = it },
-                frequency = formFrequency,
-                onFrequencyChange = { formFrequency = it },
                 onSubmit = {
                     viewModel.addHabit(
                         title = formTitle,

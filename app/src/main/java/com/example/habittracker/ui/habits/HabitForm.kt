@@ -25,8 +25,6 @@ fun HabitForm(
     onTitleChange: (String) -> Unit,
     description: String,
     onDescriptionChange: (String) -> Unit,
-    frequency: HabitFrequency,
-    onFrequencyChange: (HabitFrequency) -> Unit,
     onSubmit: () -> Unit,
     onCloseClick: () -> Unit,
     modifier: Modifier = Modifier
@@ -67,15 +65,6 @@ fun HabitForm(
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true
             )
-
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                HabitFrequency.entries.forEach { option ->
-                    TextButton(onClick = { onFrequencyChange(option) }) {
-                        val marker = if (frequency == option) "•" else ""
-                        Text("$marker ${option.name}")
-                    }
-                }
-            }
 
             TextButton(
                 onClick = onSubmit,

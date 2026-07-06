@@ -94,11 +94,12 @@ fun HabitTrackerApp(
                 } else {
                     EditSavingsGoalScreen(
                         goal = goal,
-                        onSave = { name, targetAmountText ->
+                        onSave = { name, targetAmountText, earningsCapText ->
                             val updated = savingsGoalViewModel.updateSavingsGoal(
                                 id = goal.id,
                                 name = name,
-                                targetAmountText = targetAmountText
+                                targetAmountText = targetAmountText,
+                                earningsCapText = earningsCapText
                             )
                             if (updated) {
                                 currentScreen = AppScreen.Goals

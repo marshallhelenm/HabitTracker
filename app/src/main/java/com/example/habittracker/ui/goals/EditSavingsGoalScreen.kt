@@ -23,12 +23,13 @@ import java.math.BigDecimal
 @Composable
 fun EditSavingsGoalScreen(
     goal: SavingsGoal,
-    onSave: (name: String, targetAmountText: String) -> Boolean,
+    onSave: (name: String, targetAmountText: String, earningsCapText: String) -> Boolean,
     onCancel: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     var name by rememberSaveable(goal.id) { mutableStateOf(goal.name) }
     var targetAmountText by rememberSaveable(goal.id) { mutableStateOf(goal.targetAmount.toPlainString()) }
+    var earningsCapText by rememberSaveable(goal.id) { mutableStateOf(goal.dailyEarningsCap?.toPlainString() ?: "") }
     var inputError by rememberSaveable(goal.id) { mutableStateOf<String?>(null) }
 
     Column(
@@ -58,6 +59,15 @@ fun EditSavingsGoalScreen(
             singleLine = true
         )
 
+
+        OutlinedTextField(
+            value = earningsCapText,
+            onValueChange = { earningsCapText = it },
+            label = { Text("Daily Earnings Cap (optional)") },
+            modifier = Modifier.fillMaxWidth(),
+            singleLine = true
+        )
+
         if (inputError != null) {
             Text(
                 text = inputError!!,
@@ -77,12 +87,17 @@ fun EditSavingsGoalScreen(
                 onClick = {
                     val normalizedName = name.trim()
                     val parsedAmount = targetAmountText.trim().toBigDecimalOrNull()
-                    if (normalizedName.isEmpty() || parsedAmount == null || parsedAmount <= BigDecimal.ZERO) {
-                        inputError = "Provide a goal name and a target amount greater than zero."
+                    val trimmedEarningsCap = earningsCapText.trim()
+                    val parsedEarningsCap = trimmedEarningsCap.toBigDecimalOrNull()
+                    val earningsCapValid = trimmedEarningsCap.isEmpty() ||
+                        (parsedEarningsCap != null && parsedEarningsCap > BigDecimal.ZERO)
+                    if (normalizedName.isEmpty() || parsedAmount == null || parsedAmount <= BigDecimal.ZERO || !earningsCapValid) {
+                        inputError = "Provide a goal name and a target amount greater than zero. " +
+                            "If set, the daily earnings cap must be greater than zero."
                         return@TextButton
                     }
 
-                    val saved = onSave(name, targetAmountText)
+                    val saved = onSave(name, targetAmountText, earningsCapText)
                     if (!saved) {
                         inputError = "Unable to save changes. Please try again."
                     } else {

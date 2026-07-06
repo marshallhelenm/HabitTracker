@@ -85,7 +85,7 @@ class SavingsGoalViewModel(
         return _savingsGoals.value.firstOrNull { it.id == id }
     }
 
-    fun updateSavingsGoal(id: Long, name: String, targetAmountText: String): Boolean {
+    fun updateSavingsGoal(id: Long, name: String, targetAmountText: String, earningsCapText: String): Boolean {
         val existingGoal = _savingsGoals.value.firstOrNull { it.id == id } ?: return false
         val normalizedName = name.trim()
         if (normalizedName.isEmpty()) {
@@ -97,12 +97,24 @@ class SavingsGoalViewModel(
             return false
         }
 
+        val trimmedEarningsCap = earningsCapText.trim()
+        val earningsCap: BigDecimal? = if (trimmedEarningsCap.isEmpty()) {
+            null
+        } else {
+            val parsed = trimmedEarningsCap.toBigDecimalOrNull()
+            if (parsed == null || parsed <= BigDecimal.ZERO) {
+                return false
+            }
+            parsed
+        }
+
         viewModelScope.launch {
             withContext(Dispatchers.IO) {
                 repository.upsertSavingsGoal(
                     existingGoal.copy(
                         name = normalizedName,
-                        targetAmount = targetAmount
+                        targetAmount = targetAmount,
+                        dailyEarningsCap = earningsCap
                     )
                 )
             }
