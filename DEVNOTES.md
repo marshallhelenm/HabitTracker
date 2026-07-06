@@ -1,0 +1,8 @@
+Color Palette:
+FFD166
+FFBA66
+FF7497
+FF828F
+FFBAD4
+
+
