@@ -28,10 +28,13 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.habittracker.ui.components.HabitCard
 import com.example.habittracker.viewmodel.HabitViewModel
 import androidx.compose.foundation.layout.Row
+import com.example.habittracker.viewmodel.SavingsGoalViewModel
+import com.example.habittracker.ui.completeHabit
 
 @Composable
 fun HomeScreen(
     habitViewModel: HabitViewModel,
+    savingsGoalViewModel: SavingsGoalViewModel,
     modifier: Modifier = Modifier
 ) {
     val habits = habitViewModel.habits.collectAsStateWithLifecycle().value
@@ -86,7 +89,7 @@ fun HomeScreen(
                     items(trackedHabits, key = { it.id }) { habit ->
                         HabitCard(
                             habit = habit,
-                            onCompleteClick = { habitViewModel.markHabitCompletedToday(habit) }
+                            onCompleteClick = { completeHabit(habitViewModel, savingsGoalViewModel, habit) }
                         )
                     }
                 }

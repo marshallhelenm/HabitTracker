@@ -97,30 +97,31 @@ class HabitViewModel(
         }
     }
 
-    fun markHabitCompletedToday(habit: Habit) {
+    fun markHabitCompletedToday(habit: Habit): Habit? {
+        val today = LocalDate.now()
+        val alreadyCompletedToday = habit.lastCompletedOn == today
+        if (alreadyCompletedToday) {
+            return null
+        }
+
+        val newStreak = when (habit.lastCompletedOn) {
+            today.minusDays(1) -> habit.currentStreak + 1
+            else -> 1
+        }
+
+        val updatedHabit = habit.copy(
+            lastCompletedOn = today,
+            currentStreak = newStreak,
+            longestStreak = maxOf(habit.longestStreak, newStreak)
+        )
+
         viewModelScope.launch {
-            val today = LocalDate.now()
-            val alreadyCompletedToday = habit.lastCompletedOn == today
-            if (alreadyCompletedToday) {
-                return@launch
-            }
-
-            val newStreak = when (habit.lastCompletedOn) {
-                today.minusDays(1) -> habit.currentStreak + 1
-                else -> 1
-            }
-
             withContext(Dispatchers.IO) {
-                repository.upsertHabit(
-                    habit.copy(
-                        lastCompletedOn = today,
-                        currentStreak = newStreak,
-                        longestStreak = maxOf(habit.longestStreak, newStreak)
-                    )
-                )
+                repository.upsertHabit(updatedHabit)
             }
             refresh()
         }
+        return updatedHabit
     }
 
     companion object {

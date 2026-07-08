@@ -29,13 +29,17 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.habittracker.model.Habit
 import com.example.habittracker.model.HabitFrequency
+import com.example.habittracker.model.SavingsGoal
 import com.example.habittracker.ui.components.EditHabitDialog
 import com.example.habittracker.ui.components.HabitCard
 import com.example.habittracker.viewmodel.HabitViewModel
+import com.example.habittracker.viewmodel.SavingsGoalViewModel
+import com.example.habittracker.ui.completeHabit
 
 @Composable
 fun HabitsScreen(
     viewModel: HabitViewModel,
+    savingsGoalViewModel: SavingsGoalViewModel,
     modifier: Modifier = Modifier
 ) {
     val habits by viewModel.habits.collectAsStateWithLifecycle()
@@ -109,7 +113,7 @@ fun HabitsScreen(
 
                     HabitCard(
                         habit = habit,
-                        onCompleteClick = { viewModel.markHabitCompletedToday(habit) },
+                        onCompleteClick = { completeHabit(viewModel, savingsGoalViewModel, habit) },
                         onEditClick = { selectedHabitForEdit = habit },
                         headerActions = {
                             TextButton(onClick = { viewModel.deleteHabit(habit.id) }) {

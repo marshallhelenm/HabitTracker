@@ -64,6 +64,7 @@ fun HabitTrackerApp(
             AppScreen.Home -> {
                 HomeScreen(
                     habitViewModel = habitViewModel,
+                    savingsGoalViewModel = savingsGoalViewModel,
                     modifier = Modifier.padding(innerPadding)
                 )
             }
@@ -71,6 +72,7 @@ fun HabitTrackerApp(
             AppScreen.Habits -> {
                 HabitsScreen(
                     viewModel = habitViewModel,
+                    savingsGoalViewModel = savingsGoalViewModel,
                     modifier = Modifier.padding(innerPadding)
                 )
             }

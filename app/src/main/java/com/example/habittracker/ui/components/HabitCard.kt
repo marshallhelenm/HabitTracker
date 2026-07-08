@@ -90,7 +90,7 @@ fun HabitCard(
                 )
             }
             Text(
-                text = "Frequency: ${habit.frequency} | Current streak: ${habit.currentStreak}",
+                text = "Current streak: ${habit.currentStreak}",
                 style = MaterialTheme.typography.bodySmall
             )
         }

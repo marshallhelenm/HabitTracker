@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.example.habittracker.data.SavingsGoalRepository
+import com.example.habittracker.model.Habit
 import com.example.habittracker.model.SavingsGoal
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -121,6 +122,32 @@ class SavingsGoalViewModel(
             refresh()
         }
         return true
+    }
+
+    // Today: resolve the single pinned goal. Later, once a habit-goal join model exists,
+    // this can look up the goal(s) linked to `habit.id` instead — callers won't need to change.
+    fun recordEarningsForHabitCompletion(habit: Habit, goal: SavingsGoal?) {
+        val targetGoal = goal ?: _savingsGoals.value.firstOrNull { it.pinned } ?: return
+        val deposit = calculateEarnings(habit.currentStreak, targetGoal.dailyEarningsCap)
+        if (deposit <= BigDecimal.ZERO) {
+            return
+        }
+
+        viewModelScope.launch {
+            withContext(Dispatchers.IO) {
+                repository.upsertSavingsGoal(targetGoal.copy(currentAmount = targetGoal.currentAmount + deposit))
+            }
+            refresh()
+        }
+    }
+
+    private fun calculateEarnings(currentStreak: Int, earningsCap: BigDecimal?): BigDecimal {
+        val streakAmount = BigDecimal(currentStreak)
+        return if (earningsCap == null) {
+            streakAmount
+        } else {
+            minOf(earningsCap, streakAmount)
+        }
     }
 
     companion object {
