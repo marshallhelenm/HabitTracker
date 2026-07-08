@@ -127,7 +127,7 @@ class SavingsGoalViewModel(
     // Today: resolve the single pinned goal. Later, once a habit-goal join model exists,
     // this can look up the goal(s) linked to `habit.id` instead — callers won't need to change.
     fun recordEarningsForHabitCompletion(habit: Habit, goal: SavingsGoal?) {
-        val targetGoal = goal ?: _savingsGoals.value.firstOrNull { it.pinned } ?: return
+        val targetGoal = goal ?: getCurrentSavingsGoal() ?: return
         val deposit = calculateEarnings(habit.currentStreak, targetGoal.dailyEarningsCap)
         if (deposit <= BigDecimal.ZERO) {
             return
@@ -139,6 +139,16 @@ class SavingsGoalViewModel(
             }
             refresh()
         }
+    }
+
+    fun percentCompleted(goal: SavingsGoal?): Float {
+        if (goal == null) return 0f
+        val percent = goal.currentAmount.toDouble() / goal.targetAmount.toDouble()
+        return percent.toFloat()
+    }
+
+    fun getCurrentSavingsGoal(): SavingsGoal? {
+        return _savingsGoals.value.firstOrNull { it.pinned }
     }
 
     private fun calculateEarnings(currentStreak: Int, earningsCap: BigDecimal?): BigDecimal {

@@ -32,7 +32,9 @@ fun AppTopBar(
 ) {
     TopAppBar(
         modifier = modifier,
-        title = { if (title != "Home") Text(text = title) },
+        title = { if (title == "Home") {Text(text = "Habit Piggy")} else {
+            Text(text = title)
+        } },
         navigationIcon = {
             IconButton(onClick = onPigClick) {
                 Image(

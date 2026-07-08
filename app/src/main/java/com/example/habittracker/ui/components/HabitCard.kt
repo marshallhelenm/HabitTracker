@@ -1,5 +1,6 @@
 package com.example.habittracker.ui.components
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -8,6 +9,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -33,7 +35,11 @@ fun HabitCard(
     val completedToday = habit.lastCompletedOn == LocalDate.now()
 
     Card(
-        modifier = modifier.fillMaxWidth()
+        modifier = modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant,
+            contentColor = MaterialTheme.colorScheme.onSurfaceVariant
+        )
     ) {
         Column(
             modifier = Modifier
@@ -60,7 +66,7 @@ fun HabitCard(
                             imageVector = Icons.Filled.CheckCircle,
                             contentDescription = "Mark complete for today",
                             tint = if (completedToday) {
-                                MaterialTheme.colorScheme.primary
+                                MaterialTheme.colorScheme.tertiary
                             } else {
                                 MaterialTheme.colorScheme.onSurfaceVariant
                             },
@@ -73,7 +79,8 @@ fun HabitCard(
                     IconButton(onClick = onEditClick, modifier = Modifier.size(24.dp)) {
                         Icon(
                             imageVector = Icons.Filled.Edit,
-                            contentDescription = "Edit habit"
+                            contentDescription = "Edit habit",
+                            tint = MaterialTheme.colorScheme.tertiary
                         )
                     }
                 }

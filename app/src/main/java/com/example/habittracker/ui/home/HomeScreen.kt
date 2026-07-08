@@ -30,6 +30,7 @@ import com.example.habittracker.viewmodel.HabitViewModel
 import androidx.compose.foundation.layout.Row
 import com.example.habittracker.viewmodel.SavingsGoalViewModel
 import com.example.habittracker.ui.completeHabit
+import com.example.habittracker.ui.components.GoalProgressBar
 
 @Composable
 fun HomeScreen(
@@ -56,12 +57,7 @@ fun HomeScreen(
                 .padding(16.dp),
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            Box(
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxHeight()
-                    .background(MaterialTheme.colorScheme.surfaceVariant)
-            )
+            GoalProgressBar(percentFilled = savingsGoalViewModel.percentCompleted(savingsGoalViewModel.getCurrentSavingsGoal()), modifier = Modifier.weight(1f))
 
             Column(
                 modifier = Modifier
