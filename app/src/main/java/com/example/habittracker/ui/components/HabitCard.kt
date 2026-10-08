@@ -126,7 +126,11 @@ fun HabitCard(
                 ) {
                     StreakChip(streak = habit.currentStreak)
                     if (goalLabel != null) {
-                        GoalChip(label = goalLabel, modifier = Modifier.weight(1f, fill = false))
+                        GoalChip(
+                            label = goalLabel,
+                            onGoldCard = completedToday,
+                            modifier = Modifier.weight(1f, fill = false)
+                        )
                     }
                 }
                 if (footerActions != null) {
@@ -164,11 +168,16 @@ private fun StreakChip(streak: Int) {
 }
 
 @Composable
-private fun GoalChip(label: String, modifier: Modifier = Modifier) {
+private fun GoalChip(label: String, onGoldCard: Boolean, modifier: Modifier = Modifier) {
     Surface(
         modifier = modifier,
         shape = CircleShape,
-        color = MaterialTheme.colorScheme.tertiaryContainer,
+        // A gold chip would vanish into a gold "done today" card, so it switches to white there.
+        color = if (onGoldCard) {
+            MaterialTheme.colorScheme.surfaceContainerLowest
+        } else {
+            MaterialTheme.colorScheme.tertiaryContainer
+        },
         contentColor = MaterialTheme.colorScheme.onTertiaryContainer
     ) {
         Row(
