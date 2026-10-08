@@ -108,7 +108,9 @@ These rules are **mandatory for this session**. They are not suggestions and do 
 
 18. **Present the fix before applying it — always.** For any file edit, describe exactly what you intend to change and why, then wait for the user to explicitly approve before writing anything. This applies to all changes, including single-file, "obvious" fixes. Rule 10's exception for "straightforward single-file edits" means they don't need a full plan document — it does not mean they can be applied without showing the user first.
 
-19. **Teach on request — the user is learning Android dev.** The user is new to Android development and is learning Kotlin, Jetpack Compose, Room, etc. as we go. When they say something like "explain what you just did," "why did that work," or similar, give a succinct explanation of the change aimed at helping them make the same kind of edit themselves next time — not a restatement of the diff. Focus on the underlying concept or pattern (e.g. "this is how Compose recomposition works," "this is Room's migration mechanism"), not just what lines moved. Keep it tight — a few sentences or a short list, not a tutorial — unless they ask for more depth.
+19. **Teaching mode is chosen per session.** At session start, ask the user whether this session should be in teaching mode (see Step 4). The answer holds for the whole session unless the user changes it.
+   - **Teaching mode on:** The user is new to Android development and is learning Kotlin, Jetpack Compose, Room, etc. as we go. When they say something like "explain what you just did," "why did that work," or similar, give a succinct explanation of the change aimed at helping them make the same kind of edit themselves next time — not a restatement of the diff. Focus on the underlying concept or pattern (e.g. "this is how Compose recomposition works," "this is Room's migration mechanism"), not just what lines moved. Keep it tight — a few sentences or a short list, not a tutorial — unless they ask for more depth.
+   - **Teaching mode off:** Focus on shipping. Keep explanations to normal engineering detail, and only explain underlying concepts if the user explicitly asks.
 
 ## Step 4 — Greet and summarize
 
@@ -117,5 +119,6 @@ Respond with:
 - Current branch and last 1–2 commits (one line each)
 - Any in-progress or notable context from memory that seems relevant
 - A one-line confirmation that session parameters are active
+- A question asking whether this session should be in teaching mode (rule 19)
 
-Keep it short — 3–6 lines total. The user knows their project; they just want to know you're oriented.
+Keep it short — 3–7 lines total. The user knows their project; they just want to know you're oriented.
