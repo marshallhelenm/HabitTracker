@@ -38,6 +38,9 @@ import com.example.habittracker.ui.components.HabitCard
 import com.example.habittracker.viewmodel.HabitViewModel
 import com.example.habittracker.viewmodel.SavingsGoalViewModel
 import com.example.habittracker.ui.completeHabit
+import com.example.habittracker.ui.toggleHabitToday
+import com.example.habittracker.ui.components.UndoCompletionDialog
+import java.time.LocalDate
 
 @Composable
 fun HabitsScreen(
@@ -49,6 +52,7 @@ fun HabitsScreen(
     val goals by savingsGoalViewModel.savingsGoals.collectAsStateWithLifecycle()
 
     var selectedHabitForEdit by remember { mutableStateOf<Habit?>(null) }
+    var habitPendingUndo by remember { mutableStateOf<Habit?>(null) }
     var formOpen by rememberSaveable { mutableStateOf(false) }
     var formTitle by rememberSaveable { mutableStateOf("") }
     var formDescription by rememberSaveable { mutableStateOf("") }
@@ -106,40 +110,19 @@ fun HabitsScreen(
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             items(habits, key = { it.id }) { habit ->
-                // CODE TO BE DELETED
-                // Row(
-                //     modifier = Modifier.fillMaxWidth(),
-                //     verticalAlignment = Alignment.CenterVertically,
-                //     horizontalArrangement = Arrangement.spacedBy(8.dp)
-                // ) {
-                //     Column(
-                //         horizontalAlignment = Alignment.CenterHorizontally,
-                //         modifier = Modifier.width(56.dp)
-                //     ) {
-                //         Text(
-                //             text = "Track",
-                //             style = MaterialTheme.typography.labelSmall
-                //         )
-                //         Checkbox(
-                //             checked = habit.tracking,
-                //             onCheckedChange = { isTracked ->
-                //                 viewModel.updateHabit(habit.copy(tracking = isTracked))
-                //             }
-                //         )
-                //     }
                 HabitCard(
                     habit = habit,
-                    onCompleteClick = { completeHabit(viewModel, savingsGoalViewModel, habit) },
+                    onCompleteClick = {
+                        if (habit.lastCompletedOn == LocalDate.now()) {
+                            habitPendingUndo = habit
+                        } else {
+                            toggleHabitToday(viewModel, savingsGoalViewModel, habit)
+                        }
+                    },
                     onEditClick = { selectedHabitForEdit = habit },
                     goalLabel = goals.firstOrNull { it.id == habit.goalId }
                         ?.let { if (it.status == SavingsGoalStatus.ACTIVE) it.name else "${it.name} ✓" }
                         ?: if (goals.size > 1) "Unassigned" else null,
-                    // CODE TO BE DELETED
-                    // headerActions = {
-                    //     TextButton(onClick = { viewModel.deleteHabit(habit.id) }) {
-                    //         Text("Delete")
-                    //     }
-                    // }
                     footerActions = {
                         Text(
                             text = "Track",
@@ -157,6 +140,17 @@ fun HabitsScreen(
                 )
             }
         }
+    }
+
+    habitPendingUndo?.let { habit ->
+        UndoCompletionDialog(
+            habit = habit,
+            onConfirm = {
+                toggleHabitToday(viewModel, savingsGoalViewModel, habit)
+                habitPendingUndo = null
+            },
+            onDismiss = { habitPendingUndo = null }
+        )
     }
 
     selectedHabitForEdit?.let { habit ->

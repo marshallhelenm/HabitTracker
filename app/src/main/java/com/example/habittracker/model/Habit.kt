@@ -22,7 +22,10 @@ data class Habit(
     val lastCompletedOn: LocalDate? = null,
     val tracking: Boolean = true,
     // Null means the habit pays into the pinned goal.
-    val goalId: Long? = null
+    val goalId: Long? = null,
+    val prevLastCompletedOn: LocalDate? = null,
+    val prevCurrentStreak: Int? = null,
+    val prevLongestStreak: Int? = null
 )
 
 enum class HabitFrequency {

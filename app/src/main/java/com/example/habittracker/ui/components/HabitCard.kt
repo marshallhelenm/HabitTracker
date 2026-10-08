@@ -93,7 +93,7 @@ fun HabitCard(
                             } else {
                                 Icons.Outlined.RadioButtonUnchecked
                             },
-                            contentDescription = "Mark complete for today",
+                            contentDescription = if (completedToday) "Undo today’s completion" else "Mark complete for today",
                             tint = if (completedToday) {
                                 MaterialTheme.colorScheme.tertiary
                             } else {

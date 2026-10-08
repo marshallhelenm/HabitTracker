@@ -52,6 +52,11 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import com.example.habittracker.viewmodel.SavingsGoalViewModel
 import com.example.habittracker.ui.completeHabit
 import com.example.habittracker.ui.components.PiggyBankCard
+import com.example.habittracker.ui.toggleHabitToday
+import com.example.habittracker.ui.components.UndoCompletionDialog
+import com.example.habittracker.model.Habit
+import androidx.compose.runtime.remember
+import java.time.LocalDate
 import kotlinx.coroutines.launch
 
 @Composable
@@ -79,6 +84,7 @@ fun HomeScreen(
         else -> habitsForGoalPage(trackedHabits, currentGoal, activeGoalIds)
     }
     var showQuickAddDialog by rememberSaveable { mutableStateOf(false) }
+    var habitPendingUndo by remember { mutableStateOf<Habit?>(null) }
 
     androidx.compose.material3.Scaffold(
         modifier = modifier.fillMaxSize(),
@@ -177,7 +183,13 @@ fun HomeScreen(
                     items(visibleHabits, key = { it.id }) { habit ->
                         HabitCard(
                             habit = habit,
-                            onCompleteClick = { completeHabit(habitViewModel, savingsGoalViewModel, habit) },
+                            onCompleteClick = {
+                                if (habit.lastCompletedOn == LocalDate.now()) {
+                                    habitPendingUndo = habit
+                                } else {
+                                    toggleHabitToday(habitViewModel, savingsGoalViewModel, habit)
+                                }
+                            },
                             // With a single goal every habit pays into it, so the tag would only add noise.
                             goalLabel = when {
                                 habit.goalId == currentGoal?.id || allGoals.size <= 1 -> null
@@ -191,6 +203,17 @@ fun HomeScreen(
             }
         }
 
+    }
+
+    habitPendingUndo?.let { habit ->
+        UndoCompletionDialog(
+            habit = habit,
+            onConfirm = {
+                toggleHabitToday(habitViewModel, savingsGoalViewModel, habit)
+                habitPendingUndo = null
+            },
+            onDismiss = { habitPendingUndo = null }
+        )
     }
 
     if (showQuickAddDialog) {

@@ -112,6 +112,9 @@ class HabitViewModel(
         }
 
         val updatedHabit = habit.copy(
+            prevCurrentStreak = habit.currentStreak,
+            prevLongestStreak = habit.longestStreak,
+            prevLastCompletedOn = habit.lastCompletedOn,
             lastCompletedOn = today,
             currentStreak = newStreak,
             longestStreak = maxOf(habit.longestStreak, newStreak)
@@ -124,6 +127,33 @@ class HabitViewModel(
             refresh()
         }
         return updatedHabit
+    }
+
+    fun unMarkHabitCompletedToday(habit: Habit): Habit? {
+        val today = LocalDate.now()
+        val alreadyCompletedToday = habit.lastCompletedOn == today
+        if (!alreadyCompletedToday) {
+            return null
+        }
+        val hasSnapshot = habit.prevCurrentStreak != null
+
+        val restored = habit.copy(
+            lastCompletedOn = if (hasSnapshot) habit.prevLastCompletedOn
+                                else if (habit.currentStreak >=2) today.minusDays(1) else null,
+            currentStreak = habit.prevCurrentStreak ?: (habit.currentStreak - 1).coerceAtLeast(0),
+            longestStreak = habit.prevLongestStreak ?: habit.longestStreak,
+            prevLastCompletedOn = null,
+            prevCurrentStreak = null,
+            prevLongestStreak = null
+        )
+
+        viewModelScope.launch {
+            withContext(Dispatchers.IO) {
+                repository.upsertHabit(restored)
+            }
+            refresh()
+        }
+        return restored
     }
 
     companion object {

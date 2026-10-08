@@ -1,5 +1,6 @@
 package com.example.habittracker.viewmodel
 
+import com.example.habittracker.model.Deposit
 import com.example.habittracker.model.Habit
 import com.example.habittracker.model.SavingsGoal
 import com.example.habittracker.model.SavingsGoalStatus
@@ -312,5 +313,95 @@ class SavingsGoalViewModelTest {
 
         assertTrue(vm.loaded.value)
         assertEquals(1, vm.savingsGoals.value.size)
+    }
+
+    @Test
+    fun reversingAHabit_removesItsDepositsAndRestoresTheBalance() = runTest(dispatcher) {
+        val repo = FakeSavingsGoalRepository(listOf(goal(1, pinned = true, saved = "20")))
+        val vm = viewModelWith(repo)
+
+        vm.recordEarningsForHabitCompletion(habit(goalId = null, streak = 4), goal = null)
+        advanceUntilIdle()
+        assertEquals(BigDecimal("24"), repo.amountOf(1))
+
+        vm.reverseEarningsForHabit(habit(goalId = null, streak = 4))
+        advanceUntilIdle()
+
+        assertEquals(BigDecimal("20"), repo.amountOf(1))
+        assertTrue(repo.deposits.isEmpty())
+    }
+
+    @Test
+    fun reversingOnlyTouchesThatHabitsDepositsFromToday() = runTest(dispatcher) {
+        val yesterday = currentDay.minusDays(1)
+        val repo = FakeSavingsGoalRepository(
+            listOf(goal(1, pinned = true, saved = "13")),
+            initialDeposits = listOf(
+                // Same habit, but yesterday: must stay.
+                Deposit(id = 1, goalId = 1, habitId = 1, amount = BigDecimal("3"), depositedOn = yesterday)
+            )
+        )
+        val vm = viewModelWith(repo)
+
+        vm.recordEarningsForHabitCompletion(habit(goalId = null, streak = 4, id = 1), goal = null)
+        vm.recordEarningsForHabitCompletion(habit(goalId = null, streak = 2, id = 2), goal = null)
+        advanceUntilIdle()
+        assertEquals(BigDecimal("19"), repo.amountOf(1))
+
+        vm.reverseEarningsForHabit(habit(goalId = null, streak = 4, id = 1))
+        advanceUntilIdle()
+
+        assertEquals(BigDecimal("15"), repo.amountOf(1))
+        assertEquals(
+            listOf(Pair(1L, yesterday), Pair(2L, currentDay)),
+            repo.deposits.map { it.habitId to it.depositedOn }
+        )
+    }
+
+    @Test
+    fun reversingTheCompletionThatFilledAGoal_reopensItAndTakesBackTheOverflow() = runTest(dispatcher) {
+        val repo = FakeSavingsGoalRepository(listOf(goal(1, pinned = true), goal(2, target = "10", saved = "8")))
+        val vm = viewModelWith(repo)
+
+        vm.recordEarningsForHabitCompletion(habit(goalId = 2, streak = 5), goal = null)
+        advanceUntilIdle()
+        assertEquals(SavingsGoalStatus.COMPLETED, repo.getSavingsGoalById(2)!!.status)
+        assertEquals(BigDecimal("3"), repo.amountOf(1))
+
+        vm.reverseEarningsForHabit(habit(goalId = 2, streak = 5))
+        advanceUntilIdle()
+
+        assertEquals(SavingsGoalStatus.ACTIVE, repo.getSavingsGoalById(2)!!.status)
+        assertEquals(BigDecimal("8"), repo.amountOf(2))
+        assertEquals(BigDecimal("0"), repo.amountOf(1))
+        assertTrue(repo.deposits.isEmpty())
+    }
+
+    @Test
+    fun reversingAfterReversing_doesNothing() = runTest(dispatcher) {
+        val repo = FakeSavingsGoalRepository(listOf(goal(1, pinned = true, saved = "20")))
+        val vm = viewModelWith(repo)
+
+        vm.recordEarningsForHabitCompletion(habit(goalId = null, streak = 4), goal = null)
+        advanceUntilIdle()
+        vm.reverseEarningsForHabit(habit(goalId = null, streak = 4))
+        vm.reverseEarningsForHabit(habit(goalId = null, streak = 4))
+        advanceUntilIdle()
+
+        assertEquals(BigDecimal("20"), repo.amountOf(1))
+    }
+
+    @Test
+    fun reversingFreesUpTheDailyCapForLaterCompletions() = runTest(dispatcher) {
+        val repo = FakeSavingsGoalRepository(listOf(goal(1, pinned = true, cap = "5")))
+        val vm = viewModelWith(repo)
+
+        vm.recordEarningsForHabitCompletion(habit(goalId = null, streak = 5, id = 1), goal = null)
+        advanceUntilIdle()
+        vm.reverseEarningsForHabit(habit(goalId = null, streak = 5, id = 1))
+        vm.recordEarningsForHabitCompletion(habit(goalId = null, streak = 4, id = 2), goal = null)
+        advanceUntilIdle()
+
+        assertEquals(BigDecimal("4"), repo.amountOf(1))
     }
 }

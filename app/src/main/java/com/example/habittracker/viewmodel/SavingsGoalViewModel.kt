@@ -237,6 +237,29 @@ class SavingsGoalViewModel(
             refresh()
         }
     }
+
+    fun reverseEarningsForHabit(habit: Habit) {
+        viewModelScope.launch {
+            withContext(ioDispatcher) {
+                earningsMutex.withLock {
+                    val deposits = repository.depositsForHabitOn(habit.id, today())
+                    if (deposits.isEmpty()) return@withLock
+                    val goals = repository.getSavingsGoals().associateBy { it.id }.toMutableMap()
+                    deposits.forEach { d ->
+                        val g = goals[d.goalId] ?: return@forEach
+                        goals[d.goalId] = g.copy(currentAmount = g.currentAmount - d.amount)
+                    }
+                    val changed = deposits.map { it.goalId }.distinct().mapNotNull { goals[it] }.map { g ->
+                        if (g.status == SavingsGoalStatus.COMPLETED && g.currentAmount < g.targetAmount) {
+                            g.copy(status = SavingsGoalStatus.ACTIVE)
+                        } else g
+                    }
+                    repository.reverseEarnings(changed, deposits.map { it.id })
+                }
+            }
+            refresh()
+        }
+    }
     fun dismissNotice(notice: EarningsNotice) {
         _notices.value = _notices.value - notice
     }

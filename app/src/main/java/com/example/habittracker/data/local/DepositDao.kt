@@ -29,4 +29,17 @@ interface DepositDao {
         updatedGoals.forEach { upsertGoal(it) }
         deposits.forEach { insert(it) }
     }
+
+    @Query("SELECT * FROM deposits WHERE habitId = :habitId AND depositedOn = :date")
+    suspend fun getForHabitOn(habitId: Long, date: LocalDate): List<Deposit>
+
+    @Query("DELETE FROM deposits WHERE id IN (:ids)")
+    suspend fun deleteByIds(ids: List<Long>)
+
+    // Balances and the deposit log change together or not at all.
+    @Transaction
+    suspend fun reverseEarnings(updatedGoals: List<SavingsGoal>, depositIds: List<Long>) {
+        updatedGoals.forEach { upsertGoal(it) }
+        deleteByIds(depositIds)
+    }
 }

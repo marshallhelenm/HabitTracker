@@ -16,4 +16,7 @@ interface SavingsGoalRepository {
 
     // Saves the new goal balances/statuses and logs the deposits atomically.
     suspend fun applyEarnings(updatedGoals: List<SavingsGoal>, deposits: List<Deposit>)
+
+    suspend fun depositsForHabitOn(habitId: Long, date: LocalDate): List<Deposit>
+    suspend fun reverseEarnings(updatedGoals: List<SavingsGoal>, depositIds: List<Long>)
 }

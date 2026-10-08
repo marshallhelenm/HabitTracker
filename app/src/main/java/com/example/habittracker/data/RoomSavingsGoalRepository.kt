@@ -29,4 +29,11 @@ class RoomSavingsGoalRepository(
     override suspend fun applyEarnings(updatedGoals: List<SavingsGoal>, deposits: List<Deposit>) {
         depositDao.applyEarnings(updatedGoals, deposits)
     }
+
+    override suspend fun depositsForHabitOn(habitId: Long, date: LocalDate): List<Deposit> =
+        depositDao.getForHabitOn(habitId, date)
+
+    override suspend fun reverseEarnings(updatedGoals: List<SavingsGoal>, depositIds: List<Long>) {
+        depositDao.reverseEarnings(updatedGoals, depositIds)
+    }
 }
