@@ -37,6 +37,10 @@ android {
         isCoreLibraryDesugaringEnabled = true
     }
 
+    sourceSets {
+        getByName("androidTest").assets.srcDir("$projectDir/schemas")
+    }
+
     buildFeatures {
         compose = true
     }
@@ -63,10 +67,24 @@ dependencies {
     implementation(libs.google.material)
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)
+    // Pinned above lifecycle's transitive 1.7.3: room-testing needs 1.8+, and test APKs must share the app's version.
+    implementation(libs.kotlinx.serialization.core)
     ksp(libs.androidx.room.compiler)
 
     debugImplementation(libs.androidx.compose.ui.tooling)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
 
     coreLibraryDesugaring(libs.android.desugar.jdk.libs)
+
+    testImplementation(libs.junit)
+    testImplementation(libs.kotlinx.coroutines.test)
+
+    androidTestImplementation(libs.androidx.test.ext.junit)
+    androidTestImplementation(libs.androidx.test.runner)
+    androidTestImplementation(libs.androidx.room.testing)
+}
+
+// Exported schemas are the history MigrationTestHelper replays; commit them with each version bump.
+ksp {
+    arg("room.schemaLocation", "$projectDir/schemas")
 }

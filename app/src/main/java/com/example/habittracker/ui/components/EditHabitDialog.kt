@@ -22,10 +22,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.example.habittracker.model.Habit
 import com.example.habittracker.model.HabitFrequency
+import com.example.habittracker.model.SavingsGoal
 
 @Composable
 fun EditHabitDialog(
     habit: Habit,
+    goals: List<SavingsGoal>,
     onDismiss: () -> Unit,
     onSave: (Habit) -> Unit,
     onDelete: (Long) -> Unit
@@ -34,6 +36,7 @@ fun EditHabitDialog(
     var description by rememberSaveable(habit.id) { mutableStateOf(habit.description) }
     var tracking by rememberSaveable(habit.id) { mutableStateOf(habit.tracking) }
     var frequency by rememberSaveable(habit.id) { mutableStateOf(habit.frequency) }
+    var goalId by rememberSaveable(habit.id) { mutableStateOf(habit.goalId) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -67,6 +70,12 @@ fun EditHabitDialog(
                     }
                 }
 
+                GoalPicker(
+                    goals = goals,
+                    selectedGoalId = goalId,
+                    onSelect = { goalId = it }
+                )
+
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -88,7 +97,8 @@ fun EditHabitDialog(
                             title = title,
                             description = description,
                             tracking = tracking,
-                            frequency = frequency
+                            frequency = frequency,
+                            goalId = goalId
                         )
                     )
                 }

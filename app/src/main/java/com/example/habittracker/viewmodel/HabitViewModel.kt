@@ -31,7 +31,7 @@ class HabitViewModel(
         }
     }
 
-    fun addHabit(title: String, description: String) {
+    fun addHabit(title: String, description: String, goalId: Long? = null) {
         val normalizedTitle = title.trim()
         if (normalizedTitle.isEmpty()) {
             return
@@ -42,7 +42,8 @@ class HabitViewModel(
                 repository.upsertHabit(
                     Habit(
                         title = normalizedTitle,
-                        description = description.trim()
+                        description = description.trim(),
+                        goalId = goalId
                     )
                 )
             }
@@ -50,7 +51,7 @@ class HabitViewModel(
         }
     }
 
-    fun quickAddDailyHabit(name: String): Boolean {
+    fun quickAddDailyHabit(name: String, goalId: Long? = null): Boolean {
         val normalizedName = name.trim()
         if (normalizedName.isEmpty()) {
             return false
@@ -60,7 +61,8 @@ class HabitViewModel(
             withContext(Dispatchers.IO) {
                 repository.upsertHabit(
                     Habit(
-                        title = normalizedName
+                        title = normalizedName,
+                        goalId = goalId
                     )
                 )
             }

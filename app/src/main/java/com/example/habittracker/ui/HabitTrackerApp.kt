@@ -10,6 +10,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.habittracker.ui.components.AppTopBar
 import com.example.habittracker.ui.goals.EditSavingsGoalScreen
 import com.example.habittracker.ui.goals.SavingsGoalsScreen
@@ -34,6 +35,7 @@ fun HabitTrackerApp(
     var currentScreen by rememberSaveable { mutableStateOf(AppScreen.Home) }
     var menuExpanded by rememberSaveable { mutableStateOf(false) }
     var editingGoalId by rememberSaveable { mutableStateOf<Long?>(null) }
+    val habits by habitViewModel.habits.collectAsStateWithLifecycle()
 
     val screenTitle = when (currentScreen) {
         AppScreen.Home -> "Home"
@@ -77,6 +79,7 @@ fun HabitTrackerApp(
                 HomeScreen(
                     habitViewModel = habitViewModel,
                     savingsGoalViewModel = savingsGoalViewModel,
+                    onCreateGoal = { currentScreen = AppScreen.Goals },
                     modifier = Modifier.padding(innerPadding)
                 )
             }
@@ -92,6 +95,8 @@ fun HabitTrackerApp(
             AppScreen.Goals -> {
                 SavingsGoalsScreen(
                     viewModel = savingsGoalViewModel,
+                    habits = habits,
+                    onGoalDeleted = { habitViewModel.refresh() },
                     onEditGoal = { goalId ->
                         editingGoalId = goalId
                         currentScreen = AppScreen.GoalEdit

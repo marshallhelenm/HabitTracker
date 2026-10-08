@@ -1,5 +1,16 @@
 package com.example.habittracker.ui.home
 
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.painterResource
+import com.example.habittracker.R
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Box
@@ -41,10 +52,20 @@ import com.example.habittracker.ui.components.PiggyBankCard
 fun HomeScreen(
     habitViewModel: HabitViewModel,
     savingsGoalViewModel: SavingsGoalViewModel,
+    onCreateGoal: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val habits = habitViewModel.habits.collectAsStateWithLifecycle().value
     val trackedHabits = habits.filter { it.tracking }
+    val allGoals by savingsGoalViewModel.savingsGoals.collectAsStateWithLifecycle()
+    val carouselGoals by savingsGoalViewModel.carouselGoals.collectAsStateWithLifecycle()
+    val pagerState = rememberPagerState(pageCount = { carouselGoals.size })
+    val currentGoal = carouselGoals.getOrNull(pagerState.currentPage)
+    val visibleHabits = if (currentGoal == null) {
+        trackedHabits
+    } else {
+        habitsForGoalPage(trackedHabits, currentGoal, allGoals.map { it.id }.toSet())
+    }
     var showQuickAddDialog by rememberSaveable { mutableStateOf(false) }
 
     androidx.compose.material3.Scaffold(
@@ -76,11 +97,30 @@ fun HomeScreen(
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            val pinnedGoal by savingsGoalViewModel.pinnedGoal.collectAsStateWithLifecycle()
-            PiggyBankCard(
-                goal = pinnedGoal,
-                percentFilled = savingsGoalViewModel.percentCompleted(pinnedGoal)
-            )
+            if (carouselGoals.isEmpty()) {
+                NoGoalsCard(onCreateGoal = onCreateGoal)
+            } else {
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    HorizontalPager(
+                        state = pagerState,
+                        pageSpacing = 16.dp,
+                        key = { page -> carouselGoals[page].id }
+                    ) { page ->
+                        val goal = carouselGoals[page]
+                        PiggyBankCard(
+                            goal = goal,
+                            percentFilled = savingsGoalViewModel.percentCompleted(goal)
+                        )
+                    }
+                    if (carouselGoals.size > 1) {
+                        PagerDots(
+                            count = carouselGoals.size,
+                            selected = pagerState.currentPage,
+                            modifier = Modifier.align(Alignment.CenterHorizontally)
+                        )
+                    }
+                }
+            }
 
             Column(
                 modifier = Modifier.fillMaxSize(),
@@ -92,9 +132,13 @@ fun HomeScreen(
                     color = MaterialTheme.colorScheme.onBackground
                 )
 
-                if (trackedHabits.isEmpty()) {
+                if (visibleHabits.isEmpty()) {
                     Text(
-                        text = "No tracked habits yet. Tap + to add a daily habit.",
+                        text = if (currentGoal == null) {
+                            "No tracked habits yet. Tap + to add a daily habit."
+                        } else {
+                            "No habits are saving toward ${currentGoal.name} yet. Tap + to add one."
+                        },
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -106,10 +150,12 @@ fun HomeScreen(
                     verticalArrangement = Arrangement.spacedBy(10.dp),
                     contentPadding = PaddingValues(bottom = 88.dp)
                 ) {
-                    items(trackedHabits, key = { it.id }) { habit ->
+                    items(visibleHabits, key = { it.id }) { habit ->
                         HabitCard(
                             habit = habit,
-                            onCompleteClick = { completeHabit(habitViewModel, savingsGoalViewModel, habit) }
+                            onCompleteClick = { completeHabit(habitViewModel, savingsGoalViewModel, habit) },
+                            // With a single goal every habit pays into it, so the tag would only add noise.
+                            goalLabel = if (habit.goalId == currentGoal?.id || allGoals.size <= 1) null else "Unassigned"
                         )
                     }
                 }
@@ -120,9 +166,10 @@ fun HomeScreen(
 
     if (showQuickAddDialog) {
         QuickAddHabitDialog(
+            goalName = currentGoal?.name,
             onDismiss = { showQuickAddDialog = false },
             onConfirm = { name ->
-                if (habitViewModel.quickAddDailyHabit(name)) {
+                if (habitViewModel.quickAddDailyHabit(name, goalId = currentGoal?.id)) {
                     showQuickAddDialog = false
                 }
             }
@@ -132,6 +179,7 @@ fun HomeScreen(
 
 @Composable
 private fun QuickAddHabitDialog(
+    goalName: String?,
     onDismiss: () -> Unit,
     onConfirm: (String) -> Unit
 ) {
@@ -141,13 +189,21 @@ private fun QuickAddHabitDialog(
         onDismissRequest = onDismiss,
         title = { Text("Quick add habit") },
         text = {
-            OutlinedTextField(
-                value = name,
-                onValueChange = { name = it },
-                label = { Text("Habit name") },
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth()
-            )
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                if (goalName != null) {
+                    Text(
+                        text = "Saves toward $goalName",
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                }
+                OutlinedTextField(
+                    value = name,
+                    onValueChange = { name = it },
+                    label = { Text("Habit name") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
         },
         confirmButton = {
             Button(onClick = { onConfirm(name) }) {
@@ -160,4 +216,56 @@ private fun QuickAddHabitDialog(
             }
         }
     )
+}
+
+@Composable
+private fun NoGoalsCard(onCreateGoal: () -> Unit) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = MaterialTheme.shapes.large,
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.primaryContainer,
+            contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+        )
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(20.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Image(
+                painter = painterResource(id = R.drawable.piggy),
+                contentDescription = null,
+                modifier = Modifier.size(72.dp)
+            )
+            Text(text = "Your piggy bank is empty", style = MaterialTheme.typography.titleLarge)
+            Button(onClick = onCreateGoal) {
+                Text("Create your first savings goal")
+            }
+        }
+    }
+}
+
+@Composable
+private fun PagerDots(count: Int, selected: Int, modifier: Modifier = Modifier) {
+    Row(
+        modifier = modifier,
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        repeat(count) { index ->
+            val isSelected = index == selected
+            Box(
+                modifier = Modifier
+                    .size(if (isSelected) 10.dp else 8.dp)
+                    .clip(CircleShape)
+                    .background(
+                        if (isSelected) MaterialTheme.colorScheme.primary
+                        else MaterialTheme.colorScheme.outline
+                    )
+            )
+        }
+    }
 }

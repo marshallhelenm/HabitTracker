@@ -2,6 +2,7 @@ package com.example.habittracker.data.local
 
 import androidx.room.Dao
 import androidx.room.Query
+import androidx.room.Transaction
 import androidx.room.Upsert
 import com.example.habittracker.model.SavingsGoal
 
@@ -18,4 +19,14 @@ interface SavingsGoalDao {
 
     @Query("DELETE FROM savings_goals WHERE id = :id")
     suspend fun deleteById(id: Long)
+
+    @Query("UPDATE habits SET goalId = NULL WHERE goalId = :goalId")
+    suspend fun unassignHabitsFromGoal(goalId: Long)
+
+    // One transaction so a habit never points at a goal that no longer exists.
+    @Transaction
+    suspend fun deleteAndUnassignHabits(id: Long) {
+        unassignHabitsFromGoal(id)
+        deleteById(id)
+    }
 }

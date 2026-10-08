@@ -15,6 +15,6 @@ class RoomSavingsGoalRepository(
     }
 
     override suspend fun deleteSavingsGoal(id: Long) {
-        savingsGoalDao.deleteById(id)
+        savingsGoalDao.deleteAndUnassignHabits(id)
     }
 }

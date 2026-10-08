@@ -6,6 +6,8 @@ import androidx.lifecycle.viewModelScope
 import com.example.habittracker.data.SavingsGoalRepository
 import com.example.habittracker.model.Habit
 import com.example.habittracker.model.SavingsGoal
+import com.example.habittracker.model.SavingsGoalStatus
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -14,11 +16,14 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import java.math.BigDecimal
 
 class SavingsGoalViewModel(
-    private val repository: SavingsGoalRepository
+    private val repository: SavingsGoalRepository,
+    private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO
 ) : ViewModel() {
     private val _savingsGoals = MutableStateFlow<List<SavingsGoal>>(emptyList())
     val savingsGoals: StateFlow<List<SavingsGoal>> = _savingsGoals.asStateFlow()
@@ -26,13 +31,29 @@ class SavingsGoalViewModel(
         .map { goals -> goals.firstOrNull { it.pinned } }
         .stateIn(viewModelScope, SharingStarted.Eagerly, null)
 
+    // Home carousel order: pinned first, then oldest to newest. Archived goals stay off Home.
+    val carouselGoals: StateFlow<List<SavingsGoal>> = _savingsGoals
+        .map { goals ->
+            goals
+                .filter { it.status != SavingsGoalStatus.ARCHIVED }
+                .sortedWith(
+                    compareByDescending<SavingsGoal> { it.pinned }
+                        .thenBy { it.createdAt }
+                        .thenBy { it.id }
+                )
+        }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
+
     init {
         refresh()
     }
 
+    private val earningsMutex = Mutex()
+
     fun refresh() {
         viewModelScope.launch {
-            _savingsGoals.value = withContext(Dispatchers.IO) {
+            _savingsGoals.value = withContext(ioDispatcher) {
+                ensureOneGoalPinned()
                 repository.getSavingsGoals()
                     .sortedWith(
                         compareByDescending<SavingsGoal> { it.pinned }
@@ -54,7 +75,7 @@ class SavingsGoalViewModel(
         }
 
         viewModelScope.launch {
-            withContext(Dispatchers.IO) {
+            withContext(ioDispatcher) {
                 repository.upsertSavingsGoal(
                     SavingsGoal(
                         name = normalizedName,
@@ -67,19 +88,21 @@ class SavingsGoalViewModel(
         return true
     }
 
-    fun deleteSavingsGoal(id: Long) {
+    // onDeleted runs once storage is updated, so callers can reload habits whose goal link was cleared.
+    fun deleteSavingsGoal(id: Long, onDeleted: () -> Unit = {}) {
         viewModelScope.launch {
-            withContext(Dispatchers.IO) {
+            withContext(ioDispatcher) {
                 repository.deleteSavingsGoal(id)
             }
             refresh()
+            onDeleted()
         }
     }
 
     fun pinSavingsGoal(id: Long) {
         viewModelScope.launch {
             val goals = _savingsGoals.value
-            withContext(Dispatchers.IO) {
+            withContext(ioDispatcher) {
                 goals.forEach { goal ->
                     repository.upsertSavingsGoal(goal.copy(pinned = goal.id == id))
                 }
@@ -116,7 +139,7 @@ class SavingsGoalViewModel(
         }
 
         viewModelScope.launch {
-            withContext(Dispatchers.IO) {
+            withContext(ioDispatcher) {
                 repository.upsertSavingsGoal(
                     existingGoal.copy(
                         name = normalizedName,
@@ -130,18 +153,23 @@ class SavingsGoalViewModel(
         return true
     }
 
-    // Today: resolve the single pinned goal. Later, once a habit-goal join model exists,
-    // this can look up the goal(s) linked to `habit.id` instead — callers won't need to change.
+    // Pays into the habit's own goal, falling back to the pinned goal for unassigned habits.
+    // A future many-to-many habit-goal model only needs to change how the target is resolved here.
     fun recordEarningsForHabitCompletion(habit: Habit, goal: SavingsGoal?) {
-        val targetGoal = goal ?: getCurrentSavingsGoal() ?: return
-        val deposit = calculateEarnings(habit.currentStreak, targetGoal.dailyEarningsCap)
-        if (deposit <= BigDecimal.ZERO) {
-            return
-        }
-
         viewModelScope.launch {
-            withContext(Dispatchers.IO) {
-                repository.upsertSavingsGoal(targetGoal.copy(currentAmount = targetGoal.currentAmount + deposit))
+            withContext(ioDispatcher) {
+                // Serialized and read fresh from storage so back-to-back completions can't overwrite each other's deposits.
+                earningsMutex.withLock {
+                    val targetGoal = goal?.let { repository.getSavingsGoalById(it.id) }
+                        ?: habit.goalId?.let { repository.getSavingsGoalById(it) }
+                        ?: repository.getSavingsGoals().firstOrNull { it.pinned }
+                        ?: return@withLock
+                    val deposit = calculateEarnings(habit.currentStreak, targetGoal.dailyEarningsCap)
+                    if (deposit <= BigDecimal.ZERO) {
+                        return@withLock
+                    }
+                    repository.upsertSavingsGoal(targetGoal.copy(currentAmount = targetGoal.currentAmount + deposit))
+                }
             }
             refresh()
         }
@@ -155,6 +183,17 @@ class SavingsGoalViewModel(
 
     fun getCurrentSavingsGoal(): SavingsGoal? {
         return _savingsGoals.value.firstOrNull { it.pinned }
+    }
+
+    // Unassigned habits pay into the pinned goal, so whenever goals exist exactly one must be pinned.
+    // Covers the first goal ever created, deleting the pinned goal, and older data saved with none pinned.
+    private suspend fun ensureOneGoalPinned() {
+        val goals = repository.getSavingsGoals()
+        if (goals.isEmpty() || goals.any { it.pinned }) {
+            return
+        }
+        val oldest = goals.minWith(compareBy<SavingsGoal> { it.createdAt }.thenBy { it.id })
+        repository.upsertSavingsGoal(oldest.copy(pinned = true))
     }
 
     private fun calculateEarnings(currentStreak: Int, earningsCap: BigDecimal?): BigDecimal {

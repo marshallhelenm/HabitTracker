@@ -14,6 +14,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.PushPin
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -23,26 +24,35 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.habittracker.model.Habit
+import com.example.habittracker.model.SavingsGoal
 import com.example.habittracker.ui.components.GoalProgressBar
+import com.example.habittracker.ui.home.habitsForGoalPage
 import com.example.habittracker.ui.formatMoney
 import com.example.habittracker.viewmodel.SavingsGoalViewModel
 
 @Composable
 fun SavingsGoalsScreen(
     viewModel: SavingsGoalViewModel,
+    habits: List<Habit>,
     onEditGoal: (Long) -> Unit,
+    onGoalDeleted: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val goals by viewModel.savingsGoals.collectAsStateWithLifecycle()
+    val goalIds = goals.map { it.id }.toSet()
+    var goalPendingDelete by remember { mutableStateOf<SavingsGoal?>(null) }
     var name by rememberSaveable { mutableStateOf("") }
     var targetAmount by rememberSaveable { mutableStateOf("") }
     var inputError by rememberSaveable { mutableStateOf<String?>(null) }
@@ -173,7 +183,13 @@ fun SavingsGoalsScreen(
                                     modifier = Modifier.size(20.dp)
                                 )
                             }
-                            IconButton(onClick = { viewModel.deleteSavingsGoal(goal.id) }) {
+                            IconButton(onClick = {
+                                if (habitsForGoalPage(habits, goal, goalIds).isEmpty()) {
+                                    viewModel.deleteSavingsGoal(goal.id, onDeleted = onGoalDeleted)
+                                } else {
+                                    goalPendingDelete = goal
+                                }
+                            }) {
                                 Icon(
                                     imageVector = Icons.Filled.Delete,
                                     contentDescription = "Delete goal",
@@ -194,6 +210,11 @@ fun SavingsGoalsScreen(
                                     style = MaterialTheme.typography.bodyMedium,
                                     modifier = Modifier.weight(1f)
                                 )
+                                val habitCount = habitsForGoalPage(habits, goal, goalIds).size
+                                Text(
+                                    text = if (habitCount == 1) "1 habit · " else "$habitCount habits · ",
+                                    style = MaterialTheme.typography.labelMedium
+                                )
                                 Text(
                                     text = goal.status.name.lowercase().replaceFirstChar { it.uppercase() },
                                     style = MaterialTheme.typography.labelMedium
@@ -204,5 +225,44 @@ fun SavingsGoalsScreen(
                 }
             }
         }
+    }
+
+    goalPendingDelete?.let { goal ->
+        val affected = habitsForGoalPage(habits, goal, goalIds).size
+        val nextPinned = goals
+            .filter { it.id != goal.id }
+            .minWithOrNull(compareBy<SavingsGoal> { it.createdAt }.thenBy { it.id })
+        val habitsPhrase = if (affected == 1) "1 habit" else "$affected habits"
+        val destination = when {
+            !goal.pinned -> "your pinned goal"
+            nextPinned != null -> "${nextPinned.name}, which will become your pinned goal"
+            else -> null
+        }
+        AlertDialog(
+            onDismissRequest = { goalPendingDelete = null },
+            title = { Text("Delete ${goal.name}?") },
+            text = {
+                Text(
+                    if (destination != null) {
+                        "$habitsPhrase will save toward $destination instead."
+                    } else {
+                        "$habitsPhrase won't earn anything until you add a new goal."
+                    }
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    viewModel.deleteSavingsGoal(goal.id, onDeleted = onGoalDeleted)
+                    goalPendingDelete = null
+                }) {
+                    Text("Delete", color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { goalPendingDelete = null }) {
+                    Text("Cancel")
+                }
+            }
+        )
     }
 }

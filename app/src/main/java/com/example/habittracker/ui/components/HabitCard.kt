@@ -8,11 +8,13 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.LocalFireDepartment
+import androidx.compose.material.icons.filled.Savings
 import androidx.compose.material.icons.outlined.RadioButtonUnchecked
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -24,6 +26,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.example.habittracker.model.Habit
 import java.time.LocalDate
@@ -35,6 +38,7 @@ fun HabitCard(
     onEditClick: (() -> Unit)? = null,
     headerActions: (@Composable RowScope.() -> Unit)? = null,
     footerActions: (@Composable RowScope.() -> Unit)? = null,
+    goalLabel: String? = null,
     modifier: Modifier = Modifier
 ) {
     val completedToday = habit.lastCompletedOn == LocalDate.now()
@@ -112,9 +116,13 @@ fun HabitCard(
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
             ) {
                 StreakChip(streak = habit.currentStreak)
+                if (goalLabel != null) {
+                    GoalChip(label = goalLabel)
+                }
                 Spacer(modifier = Modifier.weight(1f))
                 if (footerActions != null) {
                     footerActions()
@@ -145,6 +153,35 @@ private fun StreakChip(streak: Int) {
             Text(
                 text = if (streak == 1) "1 day streak" else "$streak day streak",
                 style = MaterialTheme.typography.labelMedium
+            )
+        }
+    }
+}
+
+@Composable
+private fun GoalChip(label: String) {
+    Surface(
+        shape = CircleShape,
+        color = MaterialTheme.colorScheme.tertiaryContainer,
+        contentColor = MaterialTheme.colorScheme.onTertiaryContainer
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            Icon(
+                imageVector = Icons.Filled.Savings,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.tertiary,
+                modifier = Modifier.size(16.dp)
+            )
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelMedium,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.widthIn(max = 120.dp)
             )
         }
     }

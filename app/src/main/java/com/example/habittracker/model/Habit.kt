@@ -1,11 +1,15 @@
 package com.example.habittracker.model
 
 import androidx.room.Entity
+import androidx.room.Index
 import androidx.room.PrimaryKey
 import java.time.LocalDate
 import java.time.LocalDateTime
 
-@Entity(tableName = "habits")
+@Entity(
+    tableName = "habits",
+    indices = [Index(value = ["goalId"])]
+)
 data class Habit(
     @PrimaryKey(autoGenerate = true)
     val id: Long = 0,
@@ -16,7 +20,9 @@ data class Habit(
     val longestStreak: Int = 0,
     val createdAt: LocalDateTime = LocalDateTime.now(),
     val lastCompletedOn: LocalDate? = null,
-    val tracking: Boolean = true
+    val tracking: Boolean = true,
+    // Null means the habit pays into the pinned goal.
+    val goalId: Long? = null
 )
 
 enum class HabitFrequency {

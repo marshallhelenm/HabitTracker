@@ -45,12 +45,14 @@ fun HabitsScreen(
     modifier: Modifier = Modifier
 ) {
     val habits by viewModel.habits.collectAsStateWithLifecycle()
+    val goals by savingsGoalViewModel.savingsGoals.collectAsStateWithLifecycle()
 
     var selectedHabitForEdit by remember { mutableStateOf<Habit?>(null) }
     var formOpen by rememberSaveable { mutableStateOf(false) }
     var formTitle by rememberSaveable { mutableStateOf("") }
     var formDescription by rememberSaveable { mutableStateOf("") }
     var formFrequency by rememberSaveable { mutableStateOf(HabitFrequency.DAILY) }
+    var formGoalId by rememberSaveable { mutableStateOf<Long?>(null) }
 
     Column(
         modifier = modifier
@@ -64,13 +66,18 @@ fun HabitsScreen(
                 onTitleChange = { formTitle = it },
                 description = formDescription,
                 onDescriptionChange = { formDescription = it },
+                goals = goals,
+                goalId = formGoalId,
+                onGoalChange = { formGoalId = it },
                 onSubmit = {
                     viewModel.addHabit(
                         title = formTitle,
-                        description = formDescription
+                        description = formDescription,
+                        goalId = formGoalId
                     )
                     formTitle = ""
                     formDescription = ""
+                    formGoalId = null
                     formFrequency = HabitFrequency.DAILY
                     formOpen = false
                 },
@@ -123,6 +130,8 @@ fun HabitsScreen(
                     habit = habit,
                     onCompleteClick = { completeHabit(viewModel, savingsGoalViewModel, habit) },
                     onEditClick = { selectedHabitForEdit = habit },
+                    goalLabel = goals.firstOrNull { it.id == habit.goalId }?.name
+                        ?: if (goals.size > 1) "Unassigned" else null,
                     // CODE TO BE DELETED
                     // headerActions = {
                     //     TextButton(onClick = { viewModel.deleteHabit(habit.id) }) {
@@ -151,6 +160,7 @@ fun HabitsScreen(
     selectedHabitForEdit?.let { habit ->
         EditHabitDialog(
             habit = habit,
+            goals = goals,
             onDismiss = { selectedHabitForEdit = null },
             onSave = {
                 viewModel.updateHabit(it)

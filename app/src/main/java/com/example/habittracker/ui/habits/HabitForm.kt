@@ -20,6 +20,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.example.habittracker.model.HabitFrequency
+import com.example.habittracker.model.SavingsGoal
+import com.example.habittracker.ui.components.GoalPicker
 
 @Composable
 fun HabitForm(
@@ -27,6 +29,9 @@ fun HabitForm(
     onTitleChange: (String) -> Unit,
     description: String,
     onDescriptionChange: (String) -> Unit,
+    goals: List<SavingsGoal>,
+    goalId: Long?,
+    onGoalChange: (Long?) -> Unit,
     onSubmit: () -> Unit,
     onCloseClick: () -> Unit,
     modifier: Modifier = Modifier
@@ -75,6 +80,12 @@ fun HabitForm(
                 label = { Text("Description") },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true
+            )
+
+            GoalPicker(
+                goals = goals,
+                selectedGoalId = goalId,
+                onSelect = onGoalChange
             )
 
             Button(
