@@ -50,7 +50,8 @@ fun AppTopBar(
         navigationIcon = {
             IconButton(onClick = onPigClick) {
                 Image(
-                    painter = painterResource(id = R.drawable.piggy),
+                    // White-outlined piggy vanishes on the cream circle, so the header uses a dark-outlined version.
+                    painter = painterResource(id = R.drawable.piggy_header),
                     contentDescription = "Go to home",
                     modifier = Modifier
                         .size(40.dp)
