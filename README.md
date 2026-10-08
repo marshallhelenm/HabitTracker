@@ -51,8 +51,5 @@ sdk.dir=/Users/el/Library/Android/sdk
 
 
 
-Piggy icon for now:
-Image by <a href="https://pixabay.com/users/flutie8211-17475707/?utm_source=link-attribution&utm_medium=referral&utm_campaign=image&utm_content=9162791">Vicki Hamilton</a> from <a href="https://pixabay.com//?utm_source=link-attribution&utm_medium=referral&utm_campaign=image&utm_content=9162791">Pixabay</a>
-
 Coin icon for now:
 Image by <a href="https://www.magnific.com/free-vector/golden-coin-money-dollar-icon_169504354.htm">studiogstock on Magnific</a>
