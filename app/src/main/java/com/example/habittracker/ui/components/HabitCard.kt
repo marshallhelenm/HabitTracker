@@ -1,26 +1,30 @@
 package com.example.habittracker.ui.components
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.LocalFireDepartment
+import androidx.compose.material.icons.outlined.RadioButtonUnchecked
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.Edit
 import com.example.habittracker.model.Habit
 import java.time.LocalDate
 
@@ -30,22 +34,28 @@ fun HabitCard(
     onCompleteClick: (() -> Unit)? = null,
     onEditClick: (() -> Unit)? = null,
     headerActions: (@Composable RowScope.() -> Unit)? = null,
+    footerActions: (@Composable RowScope.() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     val completedToday = habit.lastCompletedOn == LocalDate.now()
 
     Card(
         modifier = modifier.fillMaxWidth(),
+        shape = MaterialTheme.shapes.medium,
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant,
+            containerColor = if (completedToday) {
+                MaterialTheme.colorScheme.tertiaryContainer
+            } else {
+                MaterialTheme.colorScheme.surfaceVariant
+            },
             contentColor = MaterialTheme.colorScheme.onSurfaceVariant
         )
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(12.dp),
-            verticalArrangement = Arrangement.spacedBy(4.dp)
+                .padding(start = 16.dp, end = 8.dp, top = 12.dp, bottom = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp)
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -54,39 +64,42 @@ fun HabitCard(
                 Text(
                     text = habit.title,
                     style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurface,
                     modifier = Modifier.weight(1f)
                 )
 
-                if (onCompleteClick != null) {
-                    IconButton(
-                        onClick = onCompleteClick,
-                        modifier = Modifier.size(36.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Filled.CheckCircle,
-                            contentDescription = "Mark complete for today",
-                            tint = if (completedToday) {
-                                MaterialTheme.colorScheme.tertiary
-                            } else {
-                                MaterialTheme.colorScheme.onSurfaceVariant
-                            },
-                            modifier = Modifier.size(28.dp)
-                        )
-                    }
-                }
-
                 if (onEditClick != null) {
-                    IconButton(onClick = onEditClick, modifier = Modifier.size(24.dp)) {
+                    IconButton(onClick = onEditClick) {
                         Icon(
                             imageVector = Icons.Filled.Edit,
                             contentDescription = "Edit habit",
-                            tint = MaterialTheme.colorScheme.tertiary
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(20.dp)
                         )
                     }
                 }
 
                 if (headerActions != null) {
                     headerActions()
+                }
+
+                if (onCompleteClick != null) {
+                    IconButton(onClick = onCompleteClick) {
+                        Icon(
+                            imageVector = if (completedToday) {
+                                Icons.Filled.CheckCircle
+                            } else {
+                                Icons.Outlined.RadioButtonUnchecked
+                            },
+                            contentDescription = "Mark complete for today",
+                            tint = if (completedToday) {
+                                MaterialTheme.colorScheme.tertiary
+                            } else {
+                                MaterialTheme.colorScheme.primary
+                            },
+                            modifier = Modifier.size(32.dp)
+                        )
+                    }
                 }
             }
 
@@ -96,9 +109,42 @@ fun HabitCard(
                     style = MaterialTheme.typography.bodyMedium
                 )
             }
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                StreakChip(streak = habit.currentStreak)
+                Spacer(modifier = Modifier.weight(1f))
+                if (footerActions != null) {
+                    footerActions()
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun StreakChip(streak: Int) {
+    Surface(
+        shape = CircleShape,
+        color = MaterialTheme.colorScheme.surfaceContainerLowest,
+        contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            Icon(
+                imageVector = Icons.Filled.LocalFireDepartment,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(16.dp)
+            )
             Text(
-                text = "Current streak: ${habit.currentStreak}",
-                style = MaterialTheme.typography.bodySmall
+                text = if (streak == 1) "1 day streak" else "$streak day streak",
+                style = MaterialTheme.typography.labelMedium
             )
         }
     }

@@ -8,8 +8,11 @@ import com.example.habittracker.model.Habit
 import com.example.habittracker.model.SavingsGoal
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.math.BigDecimal
@@ -19,6 +22,9 @@ class SavingsGoalViewModel(
 ) : ViewModel() {
     private val _savingsGoals = MutableStateFlow<List<SavingsGoal>>(emptyList())
     val savingsGoals: StateFlow<List<SavingsGoal>> = _savingsGoals.asStateFlow()
+    val pinnedGoal: StateFlow<SavingsGoal?> = _savingsGoals
+        .map { goals -> goals.firstOrNull { it.pinned } }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, null)
 
     init {
         refresh()

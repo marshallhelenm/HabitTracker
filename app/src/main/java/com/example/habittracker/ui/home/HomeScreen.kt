@@ -1,6 +1,7 @@
 package com.example.habittracker.ui.home
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -10,7 +11,11 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.background
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.Icon
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -30,7 +35,7 @@ import com.example.habittracker.viewmodel.HabitViewModel
 import androidx.compose.foundation.layout.Row
 import com.example.habittracker.viewmodel.SavingsGoalViewModel
 import com.example.habittracker.ui.completeHabit
-import com.example.habittracker.ui.components.GoalProgressBar
+import com.example.habittracker.ui.components.PiggyBankCard
 
 @Composable
 fun HomeScreen(
@@ -44,43 +49,62 @@ fun HomeScreen(
 
     androidx.compose.material3.Scaffold(
         modifier = modifier.fillMaxSize(),
+        containerColor = MaterialTheme.colorScheme.background,
         floatingActionButton = {
-            FloatingActionButton(onClick = { showQuickAddDialog = true }) {
-                Text(text = "+")
+            FloatingActionButton(
+                onClick = { showQuickAddDialog = true },
+                containerColor = MaterialTheme.colorScheme.primary,
+                contentColor = MaterialTheme.colorScheme.onPrimary
+            ) {
+                Icon(imageVector = Icons.Filled.Add, contentDescription = "Quick add habit")
             }
         }
     ) { innerPadding ->
-        Row(
+        // CODE TO BE DELETED
+        // Row(
+        //     modifier = Modifier
+        //         .fillMaxSize()
+        //         .padding(innerPadding)
+        //         .padding(16.dp),
+        //     horizontalArrangement = Arrangement.spacedBy(12.dp)
+        // ) {
+        //     GoalProgressBar(percentFilled = savingsGoalViewModel.percentCompleted(savingsGoalViewModel.getCurrentSavingsGoal()), modifier = Modifier.weight(1f))
+        Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
                 .padding(16.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            GoalProgressBar(percentFilled = savingsGoalViewModel.percentCompleted(savingsGoalViewModel.getCurrentSavingsGoal()), modifier = Modifier.weight(1f))
+            val pinnedGoal by savingsGoalViewModel.pinnedGoal.collectAsStateWithLifecycle()
+            PiggyBankCard(
+                goal = pinnedGoal,
+                percentFilled = savingsGoalViewModel.percentCompleted(pinnedGoal)
+            )
 
             Column(
-                modifier = Modifier
-                    .weight(3f)
-                    .fillMaxHeight(),
+                modifier = Modifier.fillMaxSize(),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 Text(
-                    text = "Tracked habits",
-                    style = MaterialTheme.typography.titleMedium
+                    text = "Today's habits",
+                    style = MaterialTheme.typography.titleLarge,
+                    color = MaterialTheme.colorScheme.onBackground
                 )
 
                 if (trackedHabits.isEmpty()) {
                     Text(
-                        text = "No tracked habits yet. Use + for a quick daily habit.",
-                        style = MaterialTheme.typography.bodyMedium
+                        text = "No tracked habits yet. Tap + to add a daily habit.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     return@Column
                 }
 
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                    contentPadding = PaddingValues(bottom = 88.dp)
                 ) {
                     items(trackedHabits, key = { it.id }) { habit ->
                         HabitCard(
@@ -126,7 +150,7 @@ private fun QuickAddHabitDialog(
             )
         },
         confirmButton = {
-            TextButton(onClick = { onConfirm(name) }) {
+            Button(onClick = { onConfirm(name) }) {
                 Text("Create")
             }
         },

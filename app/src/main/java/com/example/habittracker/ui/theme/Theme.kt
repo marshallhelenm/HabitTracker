@@ -6,7 +6,7 @@ import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 
 private val LightColors = lightColorScheme(
-    primary = PetalRouge,
+    primary = PiggyPink,
     onPrimary = OnPrimary,
     primaryContainer = PrimaryContainer,
     onPrimaryContainer = OnPrimaryContainer,
@@ -14,11 +14,11 @@ private val LightColors = lightColorScheme(
     onSecondary = OnSecondary,
     secondaryContainer = SecondaryContainer,
     onSecondaryContainer = OnSecondaryContainer,
-    tertiary = RoyalGold,
+    tertiary = CoinGold,
     onTertiary = OnTertiary,
     tertiaryContainer = TertiaryContainer,
     onTertiaryContainer = OnTertiaryContainer,
-    background = BlushPop,
+    background = PiggyCream,
     onBackground = OnBackground,
     error = DistinctError,
     onError = OnError,
@@ -29,6 +29,11 @@ private val LightColors = lightColorScheme(
     surfaceVariant = SurfaceVariant,
     onSurfaceVariant = OnSurfaceVariant,
     outline = Outline,
+    surfaceContainerLowest = SurfaceContainerLowest,
+    surfaceContainerLow = SurfaceContainerLow,
+    surfaceContainer = SurfaceContainer,
+    surfaceContainerHigh = SurfaceContainerHigh,
+    surfaceContainerHighest = SurfaceContainerHighest,
     )
 
 private val DarkColors = darkColorScheme()
@@ -38,6 +43,7 @@ fun HabitTrackerTheme(content: @Composable () -> Unit) {
     MaterialTheme(
         colorScheme = LightColors,
         typography = Typography,
+        shapes = Shapes,
         content = content
     )
 }

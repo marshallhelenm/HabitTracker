@@ -3,6 +3,8 @@ package com.example.habittracker.ui.habits
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -11,12 +13,11 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material3.Checkbox
+import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -25,6 +26,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.habittracker.model.Habit
@@ -75,11 +77,17 @@ fun HabitsScreen(
                 onCloseClick = { formOpen = false }
             )
         } else {
-            IconButton(
+            Button(
                 onClick = { formOpen = true },
                 modifier = Modifier.align(Alignment.End)
             ) {
-                Icon(Icons.Filled.Add, contentDescription = "Add Habit")
+                Icon(
+                    imageVector = Icons.Filled.Add,
+                    contentDescription = null,
+                    modifier = Modifier.size(18.dp)
+                )
+                Spacer(modifier = Modifier.width(6.dp))
+                Text("New habit")
             }
         }
 
@@ -87,41 +95,55 @@ fun HabitsScreen(
 
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+            verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             items(habits, key = { it.id }) { habit ->
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        modifier = Modifier.width(56.dp)
-                    ) {
+                // CODE TO BE DELETED
+                // Row(
+                //     modifier = Modifier.fillMaxWidth(),
+                //     verticalAlignment = Alignment.CenterVertically,
+                //     horizontalArrangement = Arrangement.spacedBy(8.dp)
+                // ) {
+                //     Column(
+                //         horizontalAlignment = Alignment.CenterHorizontally,
+                //         modifier = Modifier.width(56.dp)
+                //     ) {
+                //         Text(
+                //             text = "Track",
+                //             style = MaterialTheme.typography.labelSmall
+                //         )
+                //         Checkbox(
+                //             checked = habit.tracking,
+                //             onCheckedChange = { isTracked ->
+                //                 viewModel.updateHabit(habit.copy(tracking = isTracked))
+                //             }
+                //         )
+                //     }
+                HabitCard(
+                    habit = habit,
+                    onCompleteClick = { completeHabit(viewModel, savingsGoalViewModel, habit) },
+                    onEditClick = { selectedHabitForEdit = habit },
+                    // CODE TO BE DELETED
+                    // headerActions = {
+                    //     TextButton(onClick = { viewModel.deleteHabit(habit.id) }) {
+                    //         Text("Delete")
+                    //     }
+                    // }
+                    footerActions = {
                         Text(
                             text = "Track",
-                            style = MaterialTheme.typography.labelSmall
+                            style = MaterialTheme.typography.labelMedium
                         )
-                        Checkbox(
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Switch(
                             checked = habit.tracking,
                             onCheckedChange = { isTracked ->
                                 viewModel.updateHabit(habit.copy(tracking = isTracked))
-                            }
+                            },
+                            modifier = Modifier.scale(0.8f)
                         )
                     }
-
-                    HabitCard(
-                        habit = habit,
-                        onCompleteClick = { completeHabit(viewModel, savingsGoalViewModel, habit) },
-                        onEditClick = { selectedHabitForEdit = habit },
-                        headerActions = {
-                            TextButton(onClick = { viewModel.deleteHabit(habit.id) }) {
-                                Text("Delete")
-                            }
-                        }
-                    )
-                }
+                )
             }
         }
     }
