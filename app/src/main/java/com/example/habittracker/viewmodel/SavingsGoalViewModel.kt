@@ -60,7 +60,7 @@ class SavingsGoalViewModel(
     val carouselGoals: StateFlow<List<SavingsGoal>> = _savingsGoals
         .map { goals ->
             goals
-                .filter { it.status != SavingsGoalStatus.ARCHIVED }
+                .filter { it.status == SavingsGoalStatus.ACTIVE }
                 .sortedWith(
                     compareBy<SavingsGoal> { it.status != SavingsGoalStatus.ACTIVE }
                         .thenByDescending { it.pinned }
@@ -237,7 +237,6 @@ class SavingsGoalViewModel(
             refresh()
         }
     }
-
     fun dismissNotice(notice: EarningsNotice) {
         _notices.value = _notices.value - notice
     }
@@ -296,28 +295,6 @@ class SavingsGoalViewModel(
         goal.status == SavingsGoalStatus.COMPLETED && goal.currentAmount < newTarget -> SavingsGoalStatus.ACTIVE
         else -> goal.status
     }
-
-    // CODE TO BE DELETED
-    // // Unassigned habits pay into the pinned goal, so whenever goals exist exactly one must be pinned.
-    // // Covers the first goal ever created, deleting the pinned goal, and older data saved with none pinned.
-    // private suspend fun ensureOneGoalPinned() {
-    //     val goals = repository.getSavingsGoals()
-    //     if (goals.isEmpty() || goals.any { it.pinned }) {
-    //         return
-    //     }
-    //     val oldest = goals.minWith(compareBy<SavingsGoal> { it.createdAt }.thenBy { it.id })
-    //     repository.upsertSavingsGoal(oldest.copy(pinned = true))
-    // }
-
-    // CODE TO BE DELETED
-    // private fun calculateEarnings(currentStreak: Int, earningsCap: BigDecimal?): BigDecimal {
-    //     val streakAmount = BigDecimal(currentStreak)
-    //     return if (earningsCap == null) {
-    //         streakAmount
-    //     } else {
-    //         minOf(earningsCap, streakAmount)
-    //     }
-    // }
 
     companion object {
         fun factory(repository: SavingsGoalRepository): ViewModelProvider.Factory {

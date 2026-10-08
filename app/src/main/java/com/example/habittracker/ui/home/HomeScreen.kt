@@ -17,7 +17,6 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
@@ -36,7 +35,6 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
@@ -45,9 +43,16 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.habittracker.ui.components.HabitCard
 import com.example.habittracker.viewmodel.HabitViewModel
 import androidx.compose.foundation.layout.Row
+import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
+import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowLeft
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonDefaults.iconButtonColors
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.graphics.vector.ImageVector
 import com.example.habittracker.viewmodel.SavingsGoalViewModel
 import com.example.habittracker.ui.completeHabit
 import com.example.habittracker.ui.components.PiggyBankCard
+import kotlinx.coroutines.launch
 
 @Composable
 fun HomeScreen(
@@ -62,6 +67,7 @@ fun HomeScreen(
     val carouselGoals by savingsGoalViewModel.carouselGoals.collectAsStateWithLifecycle()
     val goalsLoaded by savingsGoalViewModel.loaded.collectAsStateWithLifecycle()
     val pagerState = rememberPagerState(pageCount = { carouselGoals.size })
+    val pagerScope = rememberCoroutineScope()
     val currentGoal = carouselGoals.getOrNull(pagerState.currentPage)
     val currentGoalIsActive = currentGoal?.status == SavingsGoalStatus.ACTIVE
     val pinnedGoal = allGoals.firstOrNull { it.pinned }
@@ -87,15 +93,6 @@ fun HomeScreen(
             }
         }
     ) { innerPadding ->
-        // CODE TO BE DELETED
-        // Row(
-        //     modifier = Modifier
-        //         .fillMaxSize()
-        //         .padding(innerPadding)
-        //         .padding(16.dp),
-        //     horizontalArrangement = Arrangement.spacedBy(12.dp)
-        // ) {
-        //     GoalProgressBar(percentFilled = savingsGoalViewModel.percentCompleted(savingsGoalViewModel.getCurrentSavingsGoal()), modifier = Modifier.weight(1f))
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -109,16 +106,35 @@ fun HomeScreen(
                 NoGoalsCard(onCreateGoal = onCreateGoal)
             } else {
                 Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    HorizontalPager(
-                        state = pagerState,
-                        pageSpacing = 16.dp,
-                        key = { page -> carouselGoals[page].id }
-                    ) { page ->
-                        val goal = carouselGoals[page]
-                        PiggyBankCard(
-                            goal = goal,
-                            percentFilled = savingsGoalViewModel.percentCompleted(goal)
-                        )
+                    Box {
+                        HorizontalPager(
+                            state = pagerState,
+                            pageSpacing = 16.dp,
+                            key = { page -> carouselGoals[page].id },
+                            modifier = Modifier.fillMaxWidth()
+                        ) { page ->
+                            val goal = carouselGoals[page]
+                            PiggyBankCard(
+                                goal = goal,
+                                percentFilled = savingsGoalViewModel.percentCompleted(goal)
+                            )
+                        }
+                        if (pagerState.currentPage > 0) {
+                            CarouselArrow(
+                                icon = Icons.AutoMirrored.Rounded.KeyboardArrowLeft,
+                                description = "Previous goal",
+                                onClick = { pagerScope.launch { pagerState.animateScrollToPage(pagerState.currentPage - 1) } },
+                                modifier = Modifier.align(Alignment.CenterStart).padding(horizontal = 4.dp)
+                            )
+                        }
+                        if (pagerState.currentPage < carouselGoals.size - 1) {
+                            CarouselArrow(
+                                icon = Icons.AutoMirrored.Rounded.KeyboardArrowRight,
+                                description = "Next goal",
+                                onClick = { pagerScope.launch { pagerState.animateScrollToPage(pagerState.currentPage + 1) } },
+                                modifier = Modifier.align(Alignment.CenterEnd).padding(horizontal = 4.dp)
+                            )
+                        }
                     }
                     if (carouselGoals.size > 1) {
                         PagerDots(
@@ -144,9 +160,6 @@ fun HomeScreen(
                     Text(
                         text = if (currentGoal == null) {
                             "No tracked habits yet. Tap + to add a daily habit."
-                        } else if (!currentGoalIsActive) {
-                            "🎉 ${currentGoal.name} is complete!" +
-                                (pinnedGoal?.let { " Its habits now save toward ${it.name}." } ?: "")
                         } else {
                             "No habits are saving toward ${currentGoal.name} yet. Tap + to add one."
                         },
@@ -283,5 +296,23 @@ private fun PagerDots(count: Int, selected: Int, modifier: Modifier = Modifier) 
                     )
             )
         }
+    }
+}
+
+@Composable
+private fun CarouselArrow(
+    icon: ImageVector,
+    description: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+){
+    IconButton(
+        onClick = onClick,
+        colors = iconButtonColors(
+            contentColor = MaterialTheme.colorScheme.primary
+        ),
+        modifier = modifier.size(32.dp)
+    ){
+        Icon(imageVector = icon, contentDescription = description, modifier = Modifier.size(28.dp))
     }
 }

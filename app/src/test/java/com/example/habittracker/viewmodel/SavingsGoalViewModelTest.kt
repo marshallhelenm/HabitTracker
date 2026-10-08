@@ -273,7 +273,7 @@ class SavingsGoalViewModelTest {
     }
 
     @Test
-    fun completedGoalsCannotBePinned_andSortAfterActiveInCarousel() = runTest(dispatcher) {
+    fun completedGoalsCannotBePinned_andDoNotAppearInCarousel() = runTest(dispatcher) {
         val repo = FakeSavingsGoalRepository(
             listOf(
                 goal(1, createdDay = 1, target = "10", saved = "10", status = SavingsGoalStatus.COMPLETED),
@@ -287,7 +287,7 @@ class SavingsGoalViewModelTest {
         advanceUntilIdle()
 
         assertFalse(repo.getSavingsGoalById(1)!!.pinned)
-        assertEquals(listOf(2L, 3L, 1L), vm.carouselGoals.value.map { it.id })
+        assertEquals(listOf(2L, 3L), vm.carouselGoals.value.map { it.id })
     }
 
     @Test
