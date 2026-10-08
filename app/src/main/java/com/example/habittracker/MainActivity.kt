@@ -13,6 +13,7 @@ import com.example.habittracker.data.RoomHabitRepository
 import com.example.habittracker.data.RoomSavingsGoalRepository
 import com.example.habittracker.data.local.HabitTrackerDatabase
 import com.example.habittracker.ui.HabitTrackerApp
+import com.example.habittracker.ui.ProvideToday
 import com.example.habittracker.ui.theme.HabitTrackerTheme
 import com.example.habittracker.viewmodel.HabitViewModel
 import com.example.habittracker.viewmodel.SavingsGoalViewModel
@@ -37,10 +38,12 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    HabitTrackerApp(
-                        habitViewModel = habitViewModel,
-                        savingsGoalViewModel = savingsGoalViewModel
-                    )
+                    ProvideToday {
+                        HabitTrackerApp(
+                            habitViewModel = habitViewModel,
+                            savingsGoalViewModel = savingsGoalViewModel
+                        )
+                    }
                 }
             }
         }

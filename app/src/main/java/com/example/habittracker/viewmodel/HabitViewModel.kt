@@ -106,10 +106,7 @@ class HabitViewModel(
             return null
         }
 
-        val newStreak = when (habit.lastCompletedOn) {
-            today.minusDays(1) -> habit.currentStreak + 1
-            else -> 1
-        }
+        val newStreak = streakAfterCompletion(habit, today)
 
         val updatedHabit = habit.copy(
             prevCurrentStreak = habit.currentStreak,

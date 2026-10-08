@@ -27,7 +27,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.example.habittracker.model.Habit
-import java.time.LocalDate
+import com.example.habittracker.ui.LocalToday
+import com.example.habittracker.viewmodel.effectiveStreak
+import com.example.habittracker.viewmodel.isCompletedOn
 
 @Composable
 fun HabitCard(
@@ -39,7 +41,8 @@ fun HabitCard(
     goalLabel: String? = null,
     modifier: Modifier = Modifier
 ) {
-    val completedToday = habit.lastCompletedOn == LocalDate.now()
+    val today = LocalToday.current
+    val completedToday = isCompletedOn(habit, today)
 
     Card(
         modifier = modifier.fillMaxWidth(),
@@ -124,7 +127,7 @@ fun HabitCard(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
-                    StreakChip(streak = habit.currentStreak)
+                    StreakChip(streak = effectiveStreak(habit, today))
                     if (goalLabel != null) {
                         GoalChip(
                             label = goalLabel,
@@ -160,7 +163,12 @@ private fun StreakChip(streak: Int) {
                 modifier = Modifier.size(16.dp)
             )
             Text(
-                text = if (streak == 1) "1 day streak" else "$streak day streak",
+                text = when (streak) {
+                    // Encouraging rather than "0 day streak" for a missed day or a brand-new habit.
+                    0 -> "Start a new streak"
+                    1 -> "1 day streak"
+                    else -> "$streak day streak"
+                },
                 style = MaterialTheme.typography.labelMedium
             )
         }
