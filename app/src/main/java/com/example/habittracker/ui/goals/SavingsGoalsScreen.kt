@@ -6,12 +6,16 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.PushPin
 import androidx.compose.material3.AlertDialog
@@ -62,6 +66,8 @@ fun SavingsGoalsScreen(
     var name by rememberSaveable { mutableStateOf("") }
     var targetAmount by rememberSaveable { mutableStateOf("") }
     var inputError by rememberSaveable { mutableStateOf<String?>(null) }
+    // Collapsed by default so the goal list gets the screen, matching the Habits screen.
+    var formOpen by rememberSaveable { mutableStateOf(false) }
     var sort by rememberSaveable { mutableStateOf(GoalSort.PINNED_FIRST) }
     var hideFinished by rememberSaveable { mutableStateOf(false) }
     val listedGoals = goalsForList(goals, sort, hideFinished)
@@ -72,7 +78,20 @@ fun SavingsGoalsScreen(
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        Card(
+        if (!formOpen) {
+            Button(
+                onClick = { formOpen = true },
+                modifier = Modifier.align(Alignment.End)
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.Add,
+                    contentDescription = null,
+                    modifier = Modifier.size(18.dp)
+                )
+                Spacer(modifier = Modifier.width(6.dp))
+                Text("New goal")
+            }
+        } else Card(
             modifier = Modifier.fillMaxWidth(),
             shape = MaterialTheme.shapes.large,
             colors = CardDefaults.cardColors(
@@ -84,7 +103,22 @@ fun SavingsGoalsScreen(
                 modifier = Modifier.padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                Text(text = "New savings goal", style = MaterialTheme.typography.titleLarge)
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "New savings goal",
+                        style = MaterialTheme.typography.titleLarge,
+                        modifier = Modifier.weight(1f)
+                    )
+                    IconButton(onClick = {
+                        formOpen = false
+                        inputError = null
+                    }) {
+                        Icon(imageVector = Icons.Filled.Close, contentDescription = "Close form")
+                    }
+                }
 
                 OutlinedTextField(
                     value = name,
@@ -117,6 +151,7 @@ fun SavingsGoalsScreen(
                             inputError = null
                             name = ""
                             targetAmount = ""
+                            formOpen = false
                         } else {
                             inputError = "Provide a goal name and a target amount greater than zero."
                         }
