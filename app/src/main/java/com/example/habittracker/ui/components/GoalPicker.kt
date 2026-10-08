@@ -3,7 +3,11 @@ package com.example.habittracker.ui.components
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.size
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.PushPin
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -22,16 +26,34 @@ fun GoalPicker(
         Text(text = "Saves toward", style = MaterialTheme.typography.labelLarge)
         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             val selectionExists = selectedGoalId == null || goals.any { it.id == selectedGoalId }
+            val followsPin = selectedGoalId == null || !selectionExists
             FilterChip(
-                selected = selectedGoalId == null || !selectionExists,
+                selected = followsPin,
                 onClick = { onSelect(null) },
-                label = { Text("Pinned goal") }
+                colors = piggyFilterChipColors(),
+                border = piggyFilterChipBorder(followsPin),
+                // A rule, not a goal: the habit follows the pin if it moves to another goal.
+                label = { Text("Whichever is pinned") }
             )
             goals.forEach { goal ->
+                val selected = goal.id == selectedGoalId
                 FilterChip(
-                    selected = goal.id == selectedGoalId,
+                    selected = selected,
                     onClick = { onSelect(goal.id) },
-                    label = { Text(goal.name) }
+                    colors = piggyFilterChipColors(),
+                    border = piggyFilterChipBorder(selected),
+                    label = { Text(goal.name) },
+                    leadingIcon = if (goal.pinned) {
+                        {
+                            Icon(
+                                imageVector = Icons.Filled.PushPin,
+                                contentDescription = "Pinned",
+                                modifier = Modifier.size(16.dp)
+                            )
+                        }
+                    } else {
+                        null
+                    }
                 )
             }
         }

@@ -1,6 +1,7 @@
 package com.example.habittracker.ui.components
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -14,7 +15,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import com.example.habittracker.ui.theme.RoyalGold
+import com.example.habittracker.ui.theme.CoinGoldDark
+import com.example.habittracker.ui.theme.ProgressGoldLight
 
 @Composable
 fun GoalProgressBar(
@@ -29,6 +31,8 @@ fun GoalProgressBar(
             .height(height)
             .clip(CircleShape)
             .background(MaterialTheme.colorScheme.tertiaryContainer)
+            // Outlined so the bar's full length stays visible against pale cards.
+            .border(1.dp, MaterialTheme.colorScheme.outline, CircleShape)
     ) {
         Box(
             modifier = Modifier
@@ -39,7 +43,7 @@ fun GoalProgressBar(
                 .clip(CircleShape)
                 .background(
                     Brush.horizontalGradient(
-                        listOf(RoyalGold, MaterialTheme.colorScheme.tertiary)
+                        listOf(ProgressGoldLight, CoinGoldDark)
                     )
                 )
         )

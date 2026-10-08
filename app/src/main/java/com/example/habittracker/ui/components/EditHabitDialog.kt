@@ -65,6 +65,8 @@ fun EditHabitDialog(
                         FilterChip(
                             selected = frequency == option,
                             onClick = { frequency = option },
+                            colors = piggyFilterChipColors(),
+                            border = piggyFilterChipBorder(frequency == option),
                             label = { Text(option.name.lowercase().replaceFirstChar { it.uppercase() }) }
                         )
                     }

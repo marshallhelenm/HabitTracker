@@ -7,10 +7,17 @@ val Grapefruit = Color(0xFFFF828F)
 val PetalRouge = Color(0xFFFF7497)
 val SunlitClay = Color(0xFFFFBA66)
 val RoyalGold = Color(0xFFFFD166)
-val DistinctError = Color(0xFFDD1C0E)
+val DistinctError = Color(0xFFC4170B)
 
+// Light brand pink: top bar and launcher only, where text is large enough to pass contrast on it.
 val PiggyPink = Color(0xFFE85A84)
+// Deeper shades for anything interactive or small-text, chosen to meet WCAG contrast
+// (4.5:1 for white text on pink, 3:1 for controls against cards and dialogs).
+val PiggyPinkDeep = Color(0xFFC2366B)
 val CoinGold = Color(0xFFE0A526)
+val CoinGoldDeep = Color(0xFFA87700)
+val CoinGoldDark = Color(0xFF8F6500)
+val ProgressGoldLight = Color(0xFFB07D00)
 val PiggyCream = Color(0xFFFFF7F2)
 
 val OnPrimary = Color(0xFFFFFFFF)
@@ -35,7 +42,9 @@ val Surface = PiggyCream
 val OnSurface = Color(0xFF4A1F2C)
 val SurfaceVariant = Color(0xFFFFE3EC)
 val OnSurfaceVariant = Color(0xFF7A4A58)
-val Outline = Color(0xFFD9A3B4)
+val Outline = Color(0xFFA26A7C)
+// Material uses outlineVariant for chip borders, so it needs the same 3:1 contrast as outline.
+val OutlineVariant = Color(0xFFA26A7C)
 
 // Material's default surface containers carry a lavender tint; these keep dialogs, menus and sheets in the blush family.
 val SurfaceContainerLowest = Color(0xFFFFFFFF)
