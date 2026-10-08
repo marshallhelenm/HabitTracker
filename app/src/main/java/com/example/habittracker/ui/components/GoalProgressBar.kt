@@ -16,7 +16,9 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.example.habittracker.ui.theme.CoinGoldDark
-import com.example.habittracker.ui.theme.ProgressGoldLight
+import com.example.habittracker.ui.theme.CoinFace
+import com.example.habittracker.ui.theme.CoinHighlight
+import com.example.habittracker.ui.theme.CoinShade
 
 @Composable
 fun GoalProgressBar(
@@ -42,10 +44,10 @@ fun GoalProgressBar(
                 .fillMaxWidth(fraction)
                 .clip(CircleShape)
                 .background(
-                    Brush.horizontalGradient(
-                        listOf(ProgressGoldLight, CoinGoldDark)
-                    )
+                    Brush.verticalGradient(listOf(CoinHighlight, CoinFace, CoinShade))
                 )
+                // The dark rim carries the 3:1 contrast against the track, so the inside can stay bright.
+                .border(1.5.dp, CoinGoldDark, CircleShape)
         )
     }
 }

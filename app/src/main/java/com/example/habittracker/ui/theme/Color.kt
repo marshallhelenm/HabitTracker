@@ -18,6 +18,10 @@ val CoinGold = Color(0xFFE0A526)
 val CoinGoldDeep = Color(0xFFA87700)
 val CoinGoldDark = Color(0xFF8F6500)
 val ProgressGoldLight = Color(0xFFB07D00)
+// Sampled from the coin artwork so the progress fill reads as coin gold.
+val CoinHighlight = Color(0xFFFEDB77)
+val CoinFace = Color(0xFFFDC75A)
+val CoinShade = Color(0xFFE9AD42)
 val PiggyCream = Color(0xFFFFF7F2)
 
 val OnPrimary = Color(0xFFFFFFFF)
