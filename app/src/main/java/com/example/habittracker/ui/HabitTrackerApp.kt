@@ -1,5 +1,6 @@
 package com.example.habittracker.ui
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
@@ -39,6 +40,17 @@ fun HabitTrackerApp(
         AppScreen.Habits -> "Habits"
         AppScreen.Goals -> "Goals"
         AppScreen.GoalEdit -> "Edit Goal"
+    }
+
+    // Home is the root, so back there falls through to the system and closes the app.
+    BackHandler(enabled = currentScreen != AppScreen.Home) {
+        currentScreen = when (currentScreen) {
+            AppScreen.GoalEdit -> {
+                editingGoalId = null
+                AppScreen.Goals
+            }
+            else -> AppScreen.Home
+        }
     }
 
     Scaffold(
