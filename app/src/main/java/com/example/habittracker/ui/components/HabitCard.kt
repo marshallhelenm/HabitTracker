@@ -4,11 +4,9 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
@@ -119,11 +117,18 @@ fun HabitCard(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(6.dp)
             ) {
-                StreakChip(streak = habit.currentStreak)
-                if (goalLabel != null) {
-                    GoalChip(label = goalLabel)
+                // Chips get whatever width the actions leave, and the goal chip truncates first,
+                // so trailing controls like the Track switch are never pushed off the card.
+                Row(
+                    modifier = Modifier.weight(1f),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    StreakChip(streak = habit.currentStreak)
+                    if (goalLabel != null) {
+                        GoalChip(label = goalLabel, modifier = Modifier.weight(1f, fill = false))
+                    }
                 }
-                Spacer(modifier = Modifier.weight(1f))
                 if (footerActions != null) {
                     footerActions()
                 }
@@ -159,8 +164,9 @@ private fun StreakChip(streak: Int) {
 }
 
 @Composable
-private fun GoalChip(label: String) {
+private fun GoalChip(label: String, modifier: Modifier = Modifier) {
     Surface(
+        modifier = modifier,
         shape = CircleShape,
         color = MaterialTheme.colorScheme.tertiaryContainer,
         contentColor = MaterialTheme.colorScheme.onTertiaryContainer
@@ -180,8 +186,7 @@ private fun GoalChip(label: String) {
                 text = label,
                 style = MaterialTheme.typography.labelMedium,
                 maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.widthIn(max = 120.dp)
+                overflow = TextOverflow.Ellipsis
             )
         }
     }
