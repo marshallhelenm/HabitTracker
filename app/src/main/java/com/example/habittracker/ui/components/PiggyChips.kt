@@ -11,7 +11,8 @@ import androidx.compose.runtime.Composable
 fun piggyFilterChipColors(): SelectableChipColors = FilterChipDefaults.filterChipColors(
     selectedContainerColor = MaterialTheme.colorScheme.primary,
     selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
-    selectedLeadingIconColor = MaterialTheme.colorScheme.onPrimary
+    selectedLeadingIconColor = MaterialTheme.colorScheme.onPrimary,
+    selectedTrailingIconColor = MaterialTheme.colorScheme.onPrimary
 )
 
 @Composable

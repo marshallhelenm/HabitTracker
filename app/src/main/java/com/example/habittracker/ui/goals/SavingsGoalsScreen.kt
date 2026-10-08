@@ -17,6 +17,7 @@ import androidx.compose.material.icons.filled.PushPin
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -37,7 +38,12 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.habittracker.model.Habit
 import com.example.habittracker.model.SavingsGoal
+import com.example.habittracker.model.SavingsGoalStatus
+import com.example.habittracker.ui.components.ChunkyArrowDown
+import com.example.habittracker.ui.components.ChunkyArrowUp
 import com.example.habittracker.ui.components.GoalProgressBar
+import com.example.habittracker.ui.components.piggyFilterChipBorder
+import com.example.habittracker.ui.components.piggyFilterChipColors
 import com.example.habittracker.ui.home.habitsForGoalPage
 import com.example.habittracker.ui.formatMoney
 import com.example.habittracker.viewmodel.SavingsGoalViewModel
@@ -51,11 +57,14 @@ fun SavingsGoalsScreen(
     modifier: Modifier = Modifier
 ) {
     val goals by viewModel.savingsGoals.collectAsStateWithLifecycle()
-    val goalIds = goals.map { it.id }.toSet()
+    val goalIds = goals.filter { it.status == SavingsGoalStatus.ACTIVE }.map { it.id }.toSet()
     var goalPendingDelete by remember { mutableStateOf<SavingsGoal?>(null) }
     var name by rememberSaveable { mutableStateOf("") }
     var targetAmount by rememberSaveable { mutableStateOf("") }
     var inputError by rememberSaveable { mutableStateOf<String?>(null) }
+    var sort by rememberSaveable { mutableStateOf(GoalSort.PINNED_FIRST) }
+    var hideFinished by rememberSaveable { mutableStateOf(false) }
+    val listedGoals = goalsForList(goals, sort, hideFinished)
 
     Column(
         modifier = modifier
@@ -123,7 +132,26 @@ fun SavingsGoalsScreen(
             modifier = Modifier.fillMaxSize(),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            items(goals, key = { it.id }) { goal ->
+            if (goals.isNotEmpty()) {
+                item(key = "list-controls") {
+                    GoalListControls(
+                        sort = sort,
+                        onSortChange = { sort = it },
+                        hideFinished = hideFinished,
+                        onHideFinishedChange = { hideFinished = it }
+                    )
+                }
+            }
+            if (goals.isNotEmpty() && listedGoals.isEmpty()) {
+                item(key = "all-hidden") {
+                    Text(
+                        text = "Every goal here is complete 🎉",
+                        style = MaterialTheme.typography.bodyMedium,
+                        modifier = Modifier.padding(vertical = 8.dp)
+                    )
+                }
+            }
+            items(listedGoals, key = { it.id }) { goal ->
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     shape = MaterialTheme.shapes.medium,
@@ -171,7 +199,8 @@ fun SavingsGoalsScreen(
                                     modifier = Modifier.size(20.dp)
                                 )
                             }
-                            IconButton(onClick = { viewModel.pinSavingsGoal(goal.id) }) {
+                            // Only active goals can be pinned; completed ones no longer take earnings.
+                            if (goal.status == SavingsGoalStatus.ACTIVE) IconButton(onClick = { viewModel.pinSavingsGoal(goal.id) }) {
                                 Icon(
                                     imageVector = Icons.Filled.PushPin,
                                     contentDescription = "Pin goal",
@@ -210,13 +239,16 @@ fun SavingsGoalsScreen(
                                     style = MaterialTheme.typography.bodyMedium,
                                     modifier = Modifier.weight(1f)
                                 )
-                                val habitCount = habitsForGoalPage(habits, goal, goalIds).size
+                                if (goal.status == SavingsGoalStatus.ACTIVE) {
+                                    val habitCount = habitsForGoalPage(habits, goal, goalIds).size
+                                    Text(
+                                        text = if (habitCount == 1) "1 habit · " else "$habitCount habits · ",
+                                        style = MaterialTheme.typography.labelMedium
+                                    )
+                                }
                                 Text(
-                                    text = if (habitCount == 1) "1 habit · " else "$habitCount habits · ",
-                                    style = MaterialTheme.typography.labelMedium
-                                )
-                                Text(
-                                    text = goal.status.name.lowercase().replaceFirstChar { it.uppercase() },
+                                    text = goal.status.name.lowercase().replaceFirstChar { it.uppercase() } +
+                                        if (goal.status == SavingsGoalStatus.COMPLETED) " 🎉" else "",
                                     style = MaterialTheme.typography.labelMedium
                                 )
                             }
@@ -263,6 +295,68 @@ fun SavingsGoalsScreen(
                     Text("Cancel")
                 }
             }
+        )
+    }
+}
+
+@Composable
+private fun GoalListControls(
+    sort: GoalSort,
+    onSortChange: (GoalSort) -> Unit,
+    hideFinished: Boolean,
+    onHideFinishedChange: (Boolean) -> Unit
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "Your goals",
+                style = MaterialTheme.typography.titleLarge,
+                modifier = Modifier.weight(1f)
+            )
+            FilterChip(
+                selected = hideFinished,
+                onClick = { onHideFinishedChange(!hideFinished) },
+                label = { Text("Hide completed") },
+                colors = piggyFilterChipColors(),
+                border = piggyFilterChipBorder(hideFinished)
+            )
+        }
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Text(text = "Sort", style = MaterialTheme.typography.labelLarge)
+            // Each chip covers a sort and its reverse (A–Z / Z–A, Progress ↓ / ↑):
+            // tapping the selected chip again flips the direction.
+            listOf(GoalSort.PINNED_FIRST, GoalSort.NAME, GoalSort.PROGRESS).forEach { chipSort ->
+                val selected = sort == chipSort || sort == chipSort.reversed
+                FilterChip(
+                    selected = selected,
+                    onClick = { onSortChange(if (selected) sort.reversed ?: sort else chipSort) },
+                    label = { Text(if (selected) sort.label else chipSort.label) },
+                    trailingIcon = sortDirectionIcon(if (selected) sort else chipSort),
+                    colors = piggyFilterChipColors(),
+                    border = piggyFilterChipBorder(selected)
+                )
+            }
+        }
+    }
+}
+
+private fun sortDirectionIcon(sort: GoalSort): (@Composable () -> Unit)? {
+    val (icon, description) = when (sort) {
+        GoalSort.PROGRESS -> ChunkyArrowDown to "Most filled first"
+        GoalSort.PROGRESS_ASCENDING -> ChunkyArrowUp to "Least filled first"
+        else -> return null
+    }
+    return {
+        Icon(
+            imageVector = icon,
+            contentDescription = description,
+            modifier = Modifier.size(18.dp)
         )
     }
 }
