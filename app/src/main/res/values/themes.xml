@@ -3,5 +3,7 @@
         <item name="android:statusBarColor">@android:color/transparent</item>
         <item name="android:navigationBarColor">@android:color/transparent</item>
         <item name="android:windowLightStatusBar" tools:targetApi="m">true</item>
+        <!-- Shown while the app starts on Android 11 and older, which have no system splash screen. -->
+        <item name="android:windowBackground">@color/launch_background</item>
     </style>
 </resources>
