@@ -48,8 +48,3 @@ sdk.dir=/Users/el/Library/Android/sdk
 ## Next steps
 - Add edit/update flows for habits and savings goals
 - Add progress tracking actions (complete habit, increment savings)
-
-
-
-Coin icon for now:
-Image by <a href="https://www.magnific.com/free-vector/golden-coin-money-dollar-icon_169504354.htm">studiogstock on Magnific</a>
