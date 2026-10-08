@@ -26,6 +26,17 @@ class GoalPageHabitsTest {
     }
 
     @Test
+    fun pinnedGoalPage_listsAssignedHabitsBeforeUnassigned_keepingOrderWithinEach() {
+        val laterAssigned = Habit(id = 14, title = "Budget review", goalId = 1)
+        val mixed = listOf(unassigned, forPinned, orphaned, forOther, laterAssigned)
+
+        assertEquals(
+            listOf(forPinned, laterAssigned, unassigned, orphaned),
+            habitsForGoalPage(mixed, pinned, existingIds)
+        )
+    }
+
+    @Test
     fun otherGoalPage_showsOnlyItsOwnHabits() {
         assertEquals(listOf(forOther), habitsForGoalPage(all, other, existingIds))
     }
