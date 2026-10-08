@@ -2,6 +2,7 @@ package com.example.habittracker.viewmodel
 
 import com.example.habittracker.model.Habit
 import com.example.habittracker.model.SavingsGoal
+import com.example.habittracker.model.SavingsGoalStatus
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -17,6 +18,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import java.math.BigDecimal
+import java.time.LocalDate
 import java.time.LocalDateTime
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -29,20 +31,31 @@ class SavingsGoalViewModelTest {
     @After
     fun tearDown() = Dispatchers.resetMain()
 
-    private fun goal(id: Long, pinned: Boolean = false, createdDay: Int = 1, cap: String? = null) = SavingsGoal(
+    private var currentDay = LocalDate.of(2026, 10, 7)
+
+    private fun goal(
+        id: Long,
+        pinned: Boolean = false,
+        createdDay: Int = 1,
+        cap: String? = null,
+        target: String = "100",
+        saved: String = "0",
+        status: SavingsGoalStatus = SavingsGoalStatus.ACTIVE
+    ) = SavingsGoal(
         id = id,
         name = "Goal $id",
-        targetAmount = BigDecimal("100"),
-        currentAmount = BigDecimal.ZERO,
+        targetAmount = BigDecimal(target),
+        currentAmount = BigDecimal(saved),
         dailyEarningsCap = cap?.let(::BigDecimal),
+        status = status,
         createdAt = LocalDateTime.of(2026, 1, createdDay, 9, 0),
         pinned = pinned
     )
 
-    private fun habit(goalId: Long?, streak: Int) = Habit(id = 1, title = "Stretch", currentStreak = streak, goalId = goalId)
+    private fun habit(goalId: Long?, streak: Int, id: Long = 1) = Habit(id = id, title = "Habit $id", currentStreak = streak, goalId = goalId)
 
     private fun TestScope.viewModelWith(repo: FakeSavingsGoalRepository): SavingsGoalViewModel {
-        val vm = SavingsGoalViewModel(repo, dispatcher)
+        val vm = SavingsGoalViewModel(repo, dispatcher) { currentDay }
         advanceUntilIdle()
         return vm
     }
@@ -144,5 +157,160 @@ class SavingsGoalViewModelTest {
 
         assertTrue(repo.getSavingsGoalById(2)!!.pinned)
         assertFalse(repo.getSavingsGoalById(1)!!.pinned)
+    }
+
+    @Test
+    fun dailyCapIsSharedAcrossHabits_andResetsNextDay() = runTest(dispatcher) {
+        val repo = FakeSavingsGoalRepository(listOf(goal(1, pinned = true, cap = "5")))
+        val vm = viewModelWith(repo)
+
+        vm.recordEarningsForHabitCompletion(habit(goalId = 1, streak = 3, id = 1), goal = null)
+        vm.recordEarningsForHabitCompletion(habit(goalId = null, streak = 4, id = 2), goal = null)
+        advanceUntilIdle()
+        assertEquals(BigDecimal("5"), repo.amountOf(1))
+        assertEquals(listOf(EarningsNotice.DailyCapReached("Goal 1", BigDecimal("5"))), vm.notices.value)
+
+        currentDay = currentDay.plusDays(1)
+        vm.recordEarningsForHabitCompletion(habit(goalId = 1, streak = 4, id = 1), goal = null)
+        advanceUntilIdle()
+        assertEquals(BigDecimal("9"), repo.amountOf(1))
+    }
+
+    @Test
+    fun depositsAreLoggedWithHabitDateAndOverflowSource() = runTest(dispatcher) {
+        val repo = FakeSavingsGoalRepository(listOf(goal(1, pinned = true), goal(2, target = "10", saved = "8")))
+        val vm = viewModelWith(repo)
+
+        vm.recordEarningsForHabitCompletion(habit(goalId = 2, streak = 5, id = 42), goal = null)
+        advanceUntilIdle()
+
+        assertEquals(
+            listOf(Triple(2L, BigDecimal("2"), null), Triple(1L, BigDecimal("3"), 2L)),
+            repo.deposits.map { Triple(it.goalId, it.amount, it.overflowFromGoalId) }
+        )
+        assertTrue(repo.deposits.all { it.habitId == 42L && it.depositedOn == currentDay })
+    }
+
+    @Test
+    fun fillingAGoal_completesIt_overflowsToPinned_andAnnouncesIt() = runTest(dispatcher) {
+        val repo = FakeSavingsGoalRepository(listOf(goal(1, pinned = true), goal(2, target = "10", saved = "8")))
+        val vm = viewModelWith(repo)
+
+        vm.recordEarningsForHabitCompletion(habit(goalId = 2, streak = 5), goal = null)
+        advanceUntilIdle()
+
+        assertEquals(SavingsGoalStatus.COMPLETED, repo.getSavingsGoalById(2)!!.status)
+        assertEquals(BigDecimal("10"), repo.amountOf(2))
+        assertEquals(BigDecimal("3"), repo.amountOf(1))
+        assertEquals(
+            listOf(EarningsNotice.GoalCompleted("Goal 2", BigDecimal("3"), "Goal 1")),
+            vm.notices.value
+        )
+    }
+
+    @Test
+    fun pinnedGoalCompleting_movesPinToOldestActiveGoal() = runTest(dispatcher) {
+        val repo = FakeSavingsGoalRepository(
+            listOf(goal(1, pinned = true, target = "10", saved = "9"), goal(2, createdDay = 8), goal(3, createdDay = 3))
+        )
+        val vm = viewModelWith(repo)
+
+        vm.recordEarningsForHabitCompletion(habit(goalId = null, streak = 4), goal = null)
+        advanceUntilIdle()
+
+        assertFalse(repo.getSavingsGoalById(1)!!.pinned)
+        assertTrue(repo.getSavingsGoalById(3)!!.pinned)
+        assertEquals(BigDecimal("3"), repo.amountOf(3))
+        assertEquals(3L, vm.pinnedGoal.value?.id)
+    }
+
+    @Test
+    fun habitOfCompletedGoal_paysIntoPinnedGoal() = runTest(dispatcher) {
+        val repo = FakeSavingsGoalRepository(
+            listOf(goal(1, pinned = true), goal(2, target = "10", saved = "10", status = SavingsGoalStatus.COMPLETED))
+        )
+        val vm = viewModelWith(repo)
+
+        vm.recordEarningsForHabitCompletion(habit(goalId = 2, streak = 4), goal = null)
+        advanceUntilIdle()
+
+        assertEquals(BigDecimal("4"), repo.amountOf(1))
+        assertEquals(BigDecimal("10"), repo.amountOf(2))
+    }
+
+    @Test
+    fun loadingGoalAlreadyPastTarget_completesIt_keepsAmount_andMovesPin() = runTest(dispatcher) {
+        val repo = FakeSavingsGoalRepository(
+            listOf(goal(1, pinned = true, target = "150", saved = "162"), goal(2, createdDay = 2))
+        )
+        viewModelWith(repo)
+
+        val concert = repo.getSavingsGoalById(1)!!
+        assertEquals(SavingsGoalStatus.COMPLETED, concert.status)
+        assertEquals(BigDecimal("162"), concert.currentAmount)
+        assertFalse(concert.pinned)
+        assertTrue(repo.getSavingsGoalById(2)!!.pinned)
+    }
+
+    @Test
+    fun editingTarget_reopensOrCompletesGoal() = runTest(dispatcher) {
+        val repo = FakeSavingsGoalRepository(
+            listOf(
+                goal(1, pinned = true, target = "100", saved = "40"),
+                goal(2, target = "50", saved = "50", status = SavingsGoalStatus.COMPLETED)
+            )
+        )
+        val vm = viewModelWith(repo)
+
+        assertTrue(vm.updateSavingsGoal(2, "Goal 2", "80", ""))
+        advanceUntilIdle()
+        assertEquals(SavingsGoalStatus.ACTIVE, repo.getSavingsGoalById(2)!!.status)
+
+        assertTrue(vm.updateSavingsGoal(1, "Goal 1", "40", ""))
+        advanceUntilIdle()
+        assertEquals(SavingsGoalStatus.COMPLETED, repo.getSavingsGoalById(1)!!.status)
+        assertTrue("pin moves to the reopened goal", repo.getSavingsGoalById(2)!!.pinned)
+    }
+
+    @Test
+    fun completedGoalsCannotBePinned_andSortAfterActiveInCarousel() = runTest(dispatcher) {
+        val repo = FakeSavingsGoalRepository(
+            listOf(
+                goal(1, createdDay = 1, target = "10", saved = "10", status = SavingsGoalStatus.COMPLETED),
+                goal(2, createdDay = 5, pinned = true),
+                goal(3, createdDay = 3)
+            )
+        )
+        val vm = viewModelWith(repo)
+
+        vm.pinSavingsGoal(1)
+        advanceUntilIdle()
+
+        assertFalse(repo.getSavingsGoalById(1)!!.pinned)
+        assertEquals(listOf(2L, 3L, 1L), vm.carouselGoals.value.map { it.id })
+    }
+
+    @Test
+    fun dismissingNoticeRemovesIt() = runTest(dispatcher) {
+        val repo = FakeSavingsGoalRepository(listOf(goal(1, pinned = true, cap = "1")))
+        val vm = viewModelWith(repo)
+
+        vm.recordEarningsForHabitCompletion(habit(goalId = null, streak = 3), goal = null)
+        advanceUntilIdle()
+        val notice = vm.notices.value.single()
+
+        vm.dismissNotice(notice)
+        assertTrue(vm.notices.value.isEmpty())
+    }
+
+    @Test
+    fun loadedFlipsOnlyAfterGoalsAreRead() = runTest(dispatcher) {
+        val vm = SavingsGoalViewModel(FakeSavingsGoalRepository(listOf(goal(1, pinned = true))), dispatcher) { currentDay }
+        assertFalse(vm.loaded.value)
+
+        advanceUntilIdle()
+
+        assertTrue(vm.loaded.value)
+        assertEquals(1, vm.savingsGoals.value.size)
     }
 }

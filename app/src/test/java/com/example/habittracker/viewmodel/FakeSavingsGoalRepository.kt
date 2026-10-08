@@ -1,11 +1,18 @@
 package com.example.habittracker.viewmodel
 
 import com.example.habittracker.data.SavingsGoalRepository
+import com.example.habittracker.model.Deposit
 import com.example.habittracker.model.SavingsGoal
+import java.math.BigDecimal
+import java.time.LocalDate
 
-class FakeSavingsGoalRepository(initial: List<SavingsGoal> = emptyList()) : SavingsGoalRepository {
+class FakeSavingsGoalRepository(
+    initial: List<SavingsGoal> = emptyList(),
+    initialDeposits: List<Deposit> = emptyList()
+) : SavingsGoalRepository {
     private val goals = initial.associateBy { it.id }.toMutableMap()
     private var nextId = (goals.keys.maxOrNull() ?: 0L) + 1
+    val deposits = initialDeposits.toMutableList()
 
     override suspend fun getSavingsGoals(): List<SavingsGoal> = goals.values.toList()
 
@@ -18,5 +25,15 @@ class FakeSavingsGoalRepository(initial: List<SavingsGoal> = emptyList()) : Savi
 
     override suspend fun deleteSavingsGoal(id: Long) {
         goals.remove(id)
+        deposits.removeAll { it.goalId == id }
+    }
+
+    override suspend fun earnedOn(goalId: Long, date: LocalDate): BigDecimal =
+        deposits.filter { it.goalId == goalId && it.depositedOn == date }
+            .fold(BigDecimal.ZERO) { sum, d -> sum + d.amount }
+
+    override suspend fun applyEarnings(updatedGoals: List<SavingsGoal>, deposits: List<Deposit>) {
+        updatedGoals.forEach { goals[it.id] = it }
+        this.deposits += deposits
     }
 }

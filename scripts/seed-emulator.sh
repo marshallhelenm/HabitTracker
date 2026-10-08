@@ -6,7 +6,7 @@ set -euo pipefail
 
 PKG=com.example.habittracker
 DB=habit_tracker.db
-EXPECTED_VERSION=3
+EXPECTED_VERSION=4
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 ADB="${ADB:-$(command -v adb || echo "$HOME/Library/Android/sdk/platform-tools/adb")}"
 BACKUP="$ROOT/build/db-backups/$(date +%Y%m%d-%H%M%S)"

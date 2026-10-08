@@ -11,6 +11,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.painterResource
 import com.example.habittracker.R
+import com.example.habittracker.model.SavingsGoalStatus
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Box
@@ -59,12 +60,17 @@ fun HomeScreen(
     val trackedHabits = habits.filter { it.tracking }
     val allGoals by savingsGoalViewModel.savingsGoals.collectAsStateWithLifecycle()
     val carouselGoals by savingsGoalViewModel.carouselGoals.collectAsStateWithLifecycle()
+    val goalsLoaded by savingsGoalViewModel.loaded.collectAsStateWithLifecycle()
     val pagerState = rememberPagerState(pageCount = { carouselGoals.size })
     val currentGoal = carouselGoals.getOrNull(pagerState.currentPage)
-    val visibleHabits = if (currentGoal == null) {
-        trackedHabits
-    } else {
-        habitsForGoalPage(trackedHabits, currentGoal, allGoals.map { it.id }.toSet())
+    val currentGoalIsActive = currentGoal?.status == SavingsGoalStatus.ACTIVE
+    val pinnedGoal = allGoals.firstOrNull { it.pinned }
+    val activeGoalIds = allGoals.filter { it.status == SavingsGoalStatus.ACTIVE }.map { it.id }.toSet()
+    val visibleHabits = when {
+        currentGoal == null -> trackedHabits
+        // A completed goal no longer earns; its habits now show on the pinned goal's page.
+        !currentGoalIsActive -> emptyList()
+        else -> habitsForGoalPage(trackedHabits, currentGoal, activeGoalIds)
     }
     var showQuickAddDialog by rememberSaveable { mutableStateOf(false) }
 
@@ -97,7 +103,9 @@ fun HomeScreen(
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            if (carouselGoals.isEmpty()) {
+            if (!goalsLoaded) {
+                // Nothing to show yet; avoids flashing the empty-bank card while goals load.
+            } else if (carouselGoals.isEmpty()) {
                 NoGoalsCard(onCreateGoal = onCreateGoal)
             } else {
                 Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -136,6 +144,9 @@ fun HomeScreen(
                     Text(
                         text = if (currentGoal == null) {
                             "No tracked habits yet. Tap + to add a daily habit."
+                        } else if (!currentGoalIsActive) {
+                            "🎉 ${currentGoal.name} is complete!" +
+                                (pinnedGoal?.let { " Its habits now save toward ${it.name}." } ?: "")
                         } else {
                             "No habits are saving toward ${currentGoal.name} yet. Tap + to add one."
                         },
@@ -155,7 +166,12 @@ fun HomeScreen(
                             habit = habit,
                             onCompleteClick = { completeHabit(habitViewModel, savingsGoalViewModel, habit) },
                             // With a single goal every habit pays into it, so the tag would only add noise.
-                            goalLabel = if (habit.goalId == currentGoal?.id || allGoals.size <= 1) null else "Unassigned"
+                            goalLabel = when {
+                                habit.goalId == currentGoal?.id || allGoals.size <= 1 -> null
+                                habit.goalId == null -> "Unassigned"
+                                // Linked to a goal that's finished (or gone); it pays in here now.
+                                else -> allGoals.firstOrNull { it.id == habit.goalId }?.let { "${it.name} ✓" } ?: "Unassigned"
+                            }
                         )
                     }
                 }
@@ -166,10 +182,10 @@ fun HomeScreen(
 
     if (showQuickAddDialog) {
         QuickAddHabitDialog(
-            goalName = currentGoal?.name,
+            goalName = if (currentGoalIsActive) currentGoal?.name else pinnedGoal?.name,
             onDismiss = { showQuickAddDialog = false },
             onConfirm = { name ->
-                if (habitViewModel.quickAddDailyHabit(name, goalId = currentGoal?.id)) {
+                if (habitViewModel.quickAddDailyHabit(name, goalId = currentGoal?.id?.takeIf { currentGoalIsActive })) {
                     showQuickAddDialog = false
                 }
             }

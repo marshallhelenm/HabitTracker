@@ -9,3 +9,22 @@ val MIGRATION_2_3 = object : Migration(2, 3) {
         db.execSQL("CREATE INDEX IF NOT EXISTS `index_habits_goalId` ON `habits` (`goalId`)")
     }
 }
+
+val MIGRATION_3_4 = object : Migration(3, 4) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL(
+            "CREATE TABLE IF NOT EXISTS `deposits` (" +
+                "`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
+                "`goalId` INTEGER NOT NULL, " +
+                "`habitId` INTEGER, " +
+                "`overflowFromGoalId` INTEGER, " +
+                "`amount` TEXT NOT NULL, " +
+                "`depositedOn` TEXT NOT NULL, " +
+                "`createdAt` TEXT NOT NULL)"
+        )
+        db.execSQL(
+            "CREATE INDEX IF NOT EXISTS `index_deposits_goalId_depositedOn` " +
+                "ON `deposits` (`goalId`, `depositedOn`)"
+        )
+    }
+}

@@ -23,7 +23,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             val database = remember { HabitTrackerDatabase.getInstance(applicationContext) }
             val habitRepository = remember { RoomHabitRepository(database.habitDao()) }
-            val savingsGoalRepository = remember { RoomSavingsGoalRepository(database.savingsGoalDao()) }
+            val savingsGoalRepository = remember { RoomSavingsGoalRepository(database.savingsGoalDao(), database.depositDao()) }
 
             val habitViewModel: HabitViewModel = viewModel(
                 factory = HabitViewModel.factory(habitRepository)

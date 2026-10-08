@@ -23,10 +23,15 @@ interface SavingsGoalDao {
     @Query("UPDATE habits SET goalId = NULL WHERE goalId = :goalId")
     suspend fun unassignHabitsFromGoal(goalId: Long)
 
-    // One transaction so a habit never points at a goal that no longer exists.
+    @Query("DELETE FROM deposits WHERE goalId = :goalId")
+    suspend fun deleteDepositsForGoal(goalId: Long)
+
+    // One transaction so a habit never points at a goal that no longer exists,
+    // and no deposit history is left behind for it.
     @Transaction
     suspend fun deleteAndUnassignHabits(id: Long) {
         unassignHabitsFromGoal(id)
+        deleteDepositsForGoal(id)
         deleteById(id)
     }
 }

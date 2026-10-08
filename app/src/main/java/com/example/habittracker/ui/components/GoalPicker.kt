@@ -14,6 +14,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.example.habittracker.model.SavingsGoal
+import com.example.habittracker.model.SavingsGoalStatus
 
 @Composable
 fun GoalPicker(
@@ -35,14 +36,15 @@ fun GoalPicker(
                 // A rule, not a goal: the habit follows the pin if it moves to another goal.
                 label = { Text("Whichever is pinned") }
             )
-            goals.forEach { goal ->
+            // Completed goals no longer take earnings, so they're only listed if already selected.
+            goals.filter { it.status == SavingsGoalStatus.ACTIVE || it.id == selectedGoalId }.forEach { goal ->
                 val selected = goal.id == selectedGoalId
                 FilterChip(
                     selected = selected,
                     onClick = { onSelect(goal.id) },
                     colors = piggyFilterChipColors(),
                     border = piggyFilterChipBorder(selected),
-                    label = { Text(goal.name) },
+                    label = { Text(if (goal.status == SavingsGoalStatus.ACTIVE) goal.name else "${goal.name} ✓") },
                     leadingIcon = if (goal.pinned) {
                         {
                             Icon(

@@ -37,6 +37,17 @@ class GoalPageHabitsTest {
     }
 
     @Test
+    fun habitOfInactiveGoal_appearsOnPinnedPage() {
+        val forCompleted = Habit(id = 15, title = "Save receipts", goalId = 2)
+        val activeOnlyPinned = setOf(1L)
+
+        assertEquals(
+            listOf(forPinned, forCompleted),
+            habitsForGoalPage(listOf(forCompleted, forPinned), pinned, activeOnlyPinned)
+        )
+    }
+
+    @Test
     fun otherGoalPage_showsOnlyItsOwnHabits() {
         assertEquals(listOf(forOther), habitsForGoalPage(all, other, existingIds))
     }

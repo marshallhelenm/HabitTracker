@@ -3,8 +3,15 @@ package com.example.habittracker.ui
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -16,6 +23,7 @@ import com.example.habittracker.ui.goals.EditSavingsGoalScreen
 import com.example.habittracker.ui.goals.SavingsGoalsScreen
 import com.example.habittracker.ui.habits.HabitsScreen
 import com.example.habittracker.ui.home.HomeScreen
+import com.example.habittracker.viewmodel.EarningsNotice
 import com.example.habittracker.viewmodel.HabitViewModel
 import com.example.habittracker.viewmodel.SavingsGoalViewModel
 
@@ -36,6 +44,21 @@ fun HabitTrackerApp(
     var menuExpanded by rememberSaveable { mutableStateOf(false) }
     var editingGoalId by rememberSaveable { mutableStateOf<Long?>(null) }
     val habits by habitViewModel.habits.collectAsStateWithLifecycle()
+    val notices by savingsGoalViewModel.notices.collectAsStateWithLifecycle()
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    // Cap messages are transient; each shows once as a snackbar and is then dropped.
+    val capNotice = notices.filterIsInstance<EarningsNotice.DailyCapReached>().firstOrNull()
+    LaunchedEffect(capNotice) {
+        if (capNotice != null) {
+            snackbarHostState.showSnackbar("${capNotice.goalName} hit today's ${formatMoney(capNotice.cap)} limit")
+            savingsGoalViewModel.dismissNotice(capNotice)
+        }
+    }
+
+    notices.filterIsInstance<EarningsNotice.GoalCompleted>().firstOrNull()?.let { notice ->
+        GoalCompletedDialog(notice = notice, onDismiss = { savingsGoalViewModel.dismissNotice(notice) })
+    }
 
     val screenTitle = when (currentScreen) {
         AppScreen.Home -> "Home"
@@ -57,6 +80,7 @@ fun HabitTrackerApp(
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             AppTopBar(
                 title = screenTitle,
@@ -136,4 +160,26 @@ fun HabitTrackerApp(
             }
         }
     }
+}
+
+@Composable
+private fun GoalCompletedDialog(notice: EarningsNotice.GoalCompleted, onDismiss: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("🎉 You filled ${notice.goalName}!") },
+        text = {
+            Text(
+                if (notice.overflowGoalName != null) {
+                    "The extra ${formatMoney(notice.overflowAmount)} went to ${notice.overflowGoalName}."
+                } else {
+                    "Its habits will now save toward your pinned goal."
+                }
+            )
+        },
+        confirmButton = {
+            Button(onClick = onDismiss) {
+                Text("Oink!")
+            }
+        }
+    )
 }

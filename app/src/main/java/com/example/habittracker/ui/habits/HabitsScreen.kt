@@ -32,6 +32,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.habittracker.model.Habit
 import com.example.habittracker.model.HabitFrequency
 import com.example.habittracker.model.SavingsGoal
+import com.example.habittracker.model.SavingsGoalStatus
 import com.example.habittracker.ui.components.EditHabitDialog
 import com.example.habittracker.ui.components.HabitCard
 import com.example.habittracker.viewmodel.HabitViewModel
@@ -130,7 +131,8 @@ fun HabitsScreen(
                     habit = habit,
                     onCompleteClick = { completeHabit(viewModel, savingsGoalViewModel, habit) },
                     onEditClick = { selectedHabitForEdit = habit },
-                    goalLabel = goals.firstOrNull { it.id == habit.goalId }?.name
+                    goalLabel = goals.firstOrNull { it.id == habit.goalId }
+                        ?.let { if (it.status == SavingsGoalStatus.ACTIVE) it.name else "${it.name} ✓" }
                         ?: if (goals.size > 1) "Unassigned" else null,
                     // CODE TO BE DELETED
                     // headerActions = {

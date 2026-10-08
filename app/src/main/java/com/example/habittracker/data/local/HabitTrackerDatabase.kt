@@ -5,18 +5,20 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
+import com.example.habittracker.model.Deposit
 import com.example.habittracker.model.Habit
 import com.example.habittracker.model.SavingsGoal
 
 @Database(
-    entities = [Habit::class, SavingsGoal::class],
-    version = 3,
+    entities = [Habit::class, SavingsGoal::class, Deposit::class],
+    version = 4,
     exportSchema = true
 )
 @TypeConverters(Converters::class)
 abstract class HabitTrackerDatabase : RoomDatabase() {
     abstract fun habitDao(): HabitDao
     abstract fun savingsGoalDao(): SavingsGoalDao
+    abstract fun depositDao(): DepositDao
 
     companion object {
         @Volatile
@@ -31,7 +33,7 @@ abstract class HabitTrackerDatabase : RoomDatabase() {
                 )
                     // CODE TO BE DELETED
                     // .fallbackToDestructiveMigration()
-                    .addMigrations(MIGRATION_2_3)
+                    .addMigrations(MIGRATION_2_3, MIGRATION_3_4)
                     .build()
                     .also { INSTANCE = it }
             }

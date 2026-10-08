@@ -63,4 +63,61 @@ class MigrationTest {
             assertEquals(1, c.getInt(5))
         }
     }
+
+    @Test
+    fun migrate3To4_addsEmptyDepositsTableAndKeepsRows() {
+        helper.createDatabase(testDb, 3).apply {
+            execSQL(
+                """
+                INSERT INTO habits (id, title, description, frequency, currentStreak, longestStreak, createdAt, lastCompletedOn, tracking, goalId)
+                VALUES (7, 'Stretch', '', 'DAILY', 4, 9, '2026-09-01T08:30', '2026-10-06', 1, 3)
+                """.trimIndent()
+            )
+            execSQL(
+                """
+                INSERT INTO savings_goals (id, name, targetAmount, currentAmount, dueDate, dailyEarningsCap, status, createdAt, pinned)
+                VALUES (3, 'Danger Noodle', '2000', '412.50', NULL, '5', 'ACTIVE', '2026-09-02T10:00', 1)
+                """.trimIndent()
+            )
+            close()
+        }
+
+        val db = helper.runMigrationsAndValidate(testDb, 4, true, MIGRATION_3_4)
+
+        db.query("SELECT title, goalId FROM habits WHERE id = 7").use { c ->
+            assertTrue(c.moveToFirst())
+            assertEquals("Stretch", c.getString(0))
+            assertEquals(3, c.getInt(1))
+        }
+        db.query("SELECT currentAmount, pinned FROM savings_goals WHERE id = 3").use { c ->
+            assertTrue(c.moveToFirst())
+            assertEquals("412.50", c.getString(0))
+            assertEquals(1, c.getInt(1))
+        }
+        db.query("SELECT COUNT(*) FROM deposits").use { c ->
+            assertTrue(c.moveToFirst())
+            assertEquals(0, c.getInt(0))
+        }
+    }
+
+    @Test
+    fun migrate2To4_chainUpgradesAnOldInstall() {
+        helper.createDatabase(testDb, 2).apply {
+            execSQL(
+                """
+                INSERT INTO habits (id, title, description, frequency, currentStreak, longestStreak, createdAt, lastCompletedOn, tracking)
+                VALUES (1, 'PT', '', 'DAILY', 4, 4, '2026-06-19T15:09:42.130054', '2026-07-08', 1)
+                """.trimIndent()
+            )
+            close()
+        }
+
+        val db = helper.runMigrationsAndValidate(testDb, 4, true, MIGRATION_2_3, MIGRATION_3_4)
+
+        db.query("SELECT title, goalId FROM habits WHERE id = 1").use { c ->
+            assertTrue(c.moveToFirst())
+            assertEquals("PT", c.getString(0))
+            assertTrue(c.isNull(1))
+        }
+    }
 }

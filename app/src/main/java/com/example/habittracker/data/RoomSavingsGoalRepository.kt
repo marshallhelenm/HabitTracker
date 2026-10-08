@@ -1,10 +1,15 @@
 package com.example.habittracker.data
 
+import com.example.habittracker.data.local.DepositDao
 import com.example.habittracker.data.local.SavingsGoalDao
+import com.example.habittracker.model.Deposit
 import com.example.habittracker.model.SavingsGoal
+import java.math.BigDecimal
+import java.time.LocalDate
 
 class RoomSavingsGoalRepository(
-    private val savingsGoalDao: SavingsGoalDao
+    private val savingsGoalDao: SavingsGoalDao,
+    private val depositDao: DepositDao
 ) : SavingsGoalRepository {
     override suspend fun getSavingsGoals(): List<SavingsGoal> = savingsGoalDao.getAll()
 
@@ -16,5 +21,12 @@ class RoomSavingsGoalRepository(
 
     override suspend fun deleteSavingsGoal(id: Long) {
         savingsGoalDao.deleteAndUnassignHabits(id)
+    }
+
+    override suspend fun earnedOn(goalId: Long, date: LocalDate): BigDecimal =
+        depositDao.getForGoalOn(goalId, date).fold(BigDecimal.ZERO) { sum, deposit -> sum + deposit.amount }
+
+    override suspend fun applyEarnings(updatedGoals: List<SavingsGoal>, deposits: List<Deposit>) {
+        depositDao.applyEarnings(updatedGoals, deposits)
     }
 }
