@@ -1,6 +1,7 @@
 package com.example.habittracker.ui
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.AlertDialog
@@ -18,6 +19,8 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.habittracker.ui.components.AppBottomBar
+import com.example.habittracker.ui.components.AppDestination
 import com.example.habittracker.ui.components.AppTopBar
 import com.example.habittracker.ui.goals.EditSavingsGoalScreen
 import com.example.habittracker.ui.goals.SavingsGoalsScreen
@@ -41,7 +44,6 @@ fun HabitTrackerApp(
     modifier: Modifier = Modifier
 ) {
     var currentScreen by rememberSaveable { mutableStateOf(AppScreen.Home) }
-    var menuExpanded by rememberSaveable { mutableStateOf(false) }
     var editingGoalId by rememberSaveable { mutableStateOf<Long?>(null) }
     val habits by habitViewModel.habits.collectAsStateWithLifecycle()
     val notices by savingsGoalViewModel.notices.collectAsStateWithLifecycle()
@@ -61,14 +63,20 @@ fun HabitTrackerApp(
     }
 
     val screenTitle = when (currentScreen) {
-        AppScreen.Home -> "Home"
+        AppScreen.Home -> "Habit Piggy"
         AppScreen.Habits -> "Habits"
         AppScreen.Goals -> "Goals"
         AppScreen.GoalEdit -> "Edit Goal"
     }
 
-    // Home is the root, so back there falls through to the system and closes the app.
-    BackHandler(enabled = currentScreen != AppScreen.Home) {
+    // The bottom bar item to highlight; Edit Goal is a sub-screen of Goals.
+    val destination = when (currentScreen) {
+        AppScreen.Home -> AppDestination.Home
+        AppScreen.Habits -> AppDestination.Habits
+        AppScreen.Goals, AppScreen.GoalEdit -> AppDestination.Goals
+    }
+
+    fun goBack() {
         currentScreen = when (currentScreen) {
             AppScreen.GoalEdit -> {
                 editingGoalId = null
@@ -78,33 +86,43 @@ fun HabitTrackerApp(
         }
     }
 
+    // Home is the root, so back there falls through to the system and closes the app.
+    BackHandler(enabled = currentScreen != AppScreen.Home) { goBack() }
+
     Scaffold(
         modifier = modifier.fillMaxSize(),
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             AppTopBar(
                 title = screenTitle,
-                selectedMenu = screenTitle,
-                menuExpanded = menuExpanded,
-                onPigClick = { currentScreen = AppScreen.Home },
-                onMenuClick = { menuExpanded = true },
-                onDismissMenu = { menuExpanded = false },
-                onGoHome = { currentScreen = AppScreen.Home },
-                onGoHabits = { currentScreen = AppScreen.Habits },
-                onGoGoals = {
+                onBack = if (currentScreen == AppScreen.GoalEdit) ::goBack else null
+            )
+        },
+        bottomBar = {
+            AppBottomBar(
+                current = destination,
+                // Leaving Edit Goal from the bar discards unsaved changes, like Cancel.
+                onSelect = { selected ->
                     editingGoalId = null
-                    currentScreen = AppScreen.Goals
+                    currentScreen = when (selected) {
+                        AppDestination.Home -> AppScreen.Home
+                        AppDestination.Habits -> AppScreen.Habits
+                        AppDestination.Goals -> AppScreen.Goals
+                    }
                 }
             )
         }
     ) { innerPadding ->
+        // Screens with their own Scaffold (Home's + button) would otherwise add the system bar
+        // insets again on top of this padding.
+        val screenModifier = Modifier.padding(innerPadding).consumeWindowInsets(innerPadding)
         when (currentScreen) {
             AppScreen.Home -> {
                 HomeScreen(
                     habitViewModel = habitViewModel,
                     savingsGoalViewModel = savingsGoalViewModel,
                     onCreateGoal = { currentScreen = AppScreen.Goals },
-                    modifier = Modifier.padding(innerPadding)
+                    modifier = screenModifier
                 )
             }
 
@@ -112,7 +130,7 @@ fun HabitTrackerApp(
                 HabitsScreen(
                     viewModel = habitViewModel,
                     savingsGoalViewModel = savingsGoalViewModel,
-                    modifier = Modifier.padding(innerPadding)
+                    modifier = screenModifier
                 )
             }
 
@@ -125,7 +143,7 @@ fun HabitTrackerApp(
                         editingGoalId = goalId
                         currentScreen = AppScreen.GoalEdit
                     },
-                    modifier = Modifier.padding(innerPadding)
+                    modifier = screenModifier
                 )
             }
 
@@ -154,7 +172,7 @@ fun HabitTrackerApp(
                             currentScreen = AppScreen.Goals
                             editingGoalId = null
                         },
-                        modifier = Modifier.padding(innerPadding)
+                        modifier = screenModifier
                     )
                 }
             }
