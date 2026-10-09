@@ -195,7 +195,7 @@ class SavingsGoalViewModel(
         return true
     }
 
-    // Pays $1 per streak day into the habit's own goal, falling back to the pinned goal when the habit is
+    // Pays the habit's reward rate × its streak into the habit's own goal, falling back to the pinned goal when the habit is
     // unassigned or its goal is no longer active. Daily caps, target overflow and goal completion are
     // decided by planEarnings. A future many-to-many habit-goal model only needs to change how the
     // starting goal is resolved here.
@@ -214,7 +214,7 @@ class SavingsGoalViewModel(
                         .filter { it.status == SavingsGoalStatus.ACTIVE }
                         .associate { it.id to repository.earnedOn(it.id, date) }
 
-                    val plan = planEarnings(BigDecimal(habit.currentStreak), startGoal, goals, earnedToday)
+                    val plan = planEarnings(payoutFor(habit, habit.currentStreak), startGoal, goals, earnedToday)
                     if (plan.deposits.isEmpty() && plan.completedGoalIds.isEmpty()) {
                         return@withLock noticesFor(plan, byId)
                     }

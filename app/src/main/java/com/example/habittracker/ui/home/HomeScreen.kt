@@ -183,6 +183,7 @@ fun HomeScreen(
                     items(visibleHabits, key = { it.id }) { habit ->
                         HabitCard(
                             habit = habit,
+                            showNextPayout = true,
                             onCompleteClick = {
                                 if (habit.lastCompletedOn == LocalDate.now()) {
                                     habitPendingUndo = habit

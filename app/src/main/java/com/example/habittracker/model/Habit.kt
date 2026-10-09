@@ -4,6 +4,7 @@ import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.Index
 import androidx.room.PrimaryKey
+import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.LocalDateTime
 
@@ -19,6 +20,9 @@ data class Habit(
     // The streak survives while the habit is done at least once every this many days; 1 means daily.
     @ColumnInfo(defaultValue = "1")
     val intervalDays: Int = 1,
+    // Dollars earned per streak step: a check-in pays rewardRate × the streak it reaches.
+    @ColumnInfo(defaultValue = "'1'")
+    val rewardRate: BigDecimal = BigDecimal.ONE,
     val currentStreak: Int = 0,
     val longestStreak: Int = 0,
     val createdAt: LocalDateTime = LocalDateTime.now(),

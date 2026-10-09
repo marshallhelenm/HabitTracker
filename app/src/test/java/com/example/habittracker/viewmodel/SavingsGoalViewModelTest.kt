@@ -55,7 +55,8 @@ class SavingsGoalViewModelTest {
         sortOrder = order
     )
 
-    private fun habit(goalId: Long?, streak: Int, id: Long = 1) = Habit(id = id, title = "Habit $id", currentStreak = streak, goalId = goalId)
+    private fun habit(goalId: Long?, streak: Int, id: Long = 1, rate: String = "1") =
+        Habit(id = id, title = "Habit $id", currentStreak = streak, goalId = goalId, rewardRate = BigDecimal(rate))
 
     private fun TestScope.viewModelWith(repo: FakeSavingsGoalRepository): SavingsGoalViewModel {
         val vm = SavingsGoalViewModel(repo, dispatcher) { currentDay }
@@ -466,5 +467,30 @@ class SavingsGoalViewModelTest {
         val goals = listOf(goal(3), goal(1), goal(2))
         assertEquals(listOf(2L, 1L, 3L), orderWithMoved(goals, listOf(2L, 1L, 3L)))
         assertEquals(listOf(1L, 3L, 2L), orderWithMoved(goals, listOf(3L, 2L)))
+    }
+
+    @Test
+    fun rewardRate_multipliesTheStreak() = runTest(dispatcher) {
+        val repo = FakeSavingsGoalRepository(listOf(goal(1, pinned = true), goal(2)))
+        val vm = viewModelWith(repo)
+
+        vm.recordEarningsForHabitCompletion(habit(goalId = 1, streak = 3, id = 1, rate = "0.25"), goal = null)
+        vm.recordEarningsForHabitCompletion(habit(goalId = 2, streak = 4, id = 2, rate = "2.50"), goal = null)
+        advanceUntilIdle()
+
+        assertEquals(0, BigDecimal("0.75").compareTo(repo.amountOf(1)))
+        assertEquals(0, BigDecimal("10").compareTo(repo.amountOf(2)))
+    }
+
+    @Test
+    fun highRewardRate_isStillLimitedByTheDailyCap() = runTest(dispatcher) {
+        val repo = FakeSavingsGoalRepository(listOf(goal(1, pinned = true, cap = "5")))
+        val vm = viewModelWith(repo)
+
+        vm.recordEarningsForHabitCompletion(habit(goalId = 1, streak = 2, rate = "4"), goal = null)
+        advanceUntilIdle()
+
+        assertEquals(0, BigDecimal("5").compareTo(repo.amountOf(1)))
+        assertEquals(listOf(EarningsNotice.DailyCapReached("Goal 1", BigDecimal("5"))), vm.notices.value)
     }
 }

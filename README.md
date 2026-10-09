@@ -1,6 +1,6 @@
 # Habit Piggy
 
-An Android habit tracker where keeping your streaks fills a piggy bank. Every time you check off a habit, you earn money toward a savings goal: $1 for each day of the habit's current streak.
+An Android habit tracker where keeping your streaks fills a piggy bank. Every time you check off a habit, you earn money toward a savings goal: the habit's reward rate (from $0.25 to $20, $1 by default) times its current streak.
 
 Built with Kotlin, Jetpack Compose (Material 3) and Room.
 
@@ -13,6 +13,7 @@ Built with Kotlin, Jetpack Compose (Material 3) and Room.
 
 ## How the money works
 
+- A check-in pays the habit's **reward rate** × the streak it reaches, so a $1.25 habit on day 4 pays $5. Home shows what each habit's next check-in will pay.
 - A habit pays into its assigned goal. Unassigned habits, and habits whose goal is completed or gone, pay into the pinned goal.
 - A goal's **daily cap** limits the total it can receive per day across all habits. Once it's hit, completions still count toward streaks but earn nothing.
 - A goal fills exactly to its target and is marked **Completed**. Anything extra overflows to the pinned goal, within that goal's own cap. If the pinned goal is the one completing, the pin moves to the first active goal in your order.
@@ -91,7 +92,7 @@ adb install -r app/build/outputs/apk/release/app-release.apk
 
 ## Database and migrations
 
-- The Room database is at **version 1**. Each version's schema is exported to `app/schemas/`, and those files are committed.
+- The Room database is at **version 2**. Each version's schema is exported to `app/schemas/`, and those files are committed.
 - **Every schema change needs a `Migration`**: bump the version, add the migration in `data/local/` and register it on the database builder in `HabitTrackerDatabase.kt`. The database is never wiped and recreated on a version mismatch: without a migration, the app fails on launch rather than losing data.
 - Each migration should have an instrumented test that uses `MigrationTestHelper` to build the old version, migrate it, and let Room validate the result against the exported schema.
 

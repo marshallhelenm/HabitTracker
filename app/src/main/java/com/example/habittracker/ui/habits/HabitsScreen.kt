@@ -40,6 +40,7 @@ import com.example.habittracker.viewmodel.SavingsGoalViewModel
 import com.example.habittracker.ui.completeHabit
 import com.example.habittracker.ui.toggleHabitToday
 import com.example.habittracker.ui.components.UndoCompletionDialog
+import java.math.BigDecimal
 import java.time.LocalDate
 
 @Composable
@@ -58,6 +59,7 @@ fun HabitsScreen(
     var formDescription by rememberSaveable { mutableStateOf("") }
     var formCustomFrequency by rememberSaveable { mutableStateOf(false) }
     var formIntervalText by rememberSaveable { mutableStateOf("") }
+    var formRewardRate by rememberSaveable { mutableStateOf(BigDecimal.ONE) }
     var formGoalId by rememberSaveable { mutableStateOf<Long?>(null) }
 
     Column(
@@ -76,6 +78,8 @@ fun HabitsScreen(
                 onCustomFrequencyChange = { formCustomFrequency = it },
                 intervalText = formIntervalText,
                 onIntervalTextChange = { formIntervalText = it },
+                rewardRate = formRewardRate,
+                onRewardRateChange = { formRewardRate = it },
                 goals = goals,
                 goalId = formGoalId,
                 onGoalChange = { formGoalId = it },
@@ -84,6 +88,7 @@ fun HabitsScreen(
                         title = formTitle,
                         description = formDescription,
                         intervalDays = intervalDaysFrom(formCustomFrequency, formIntervalText) ?: 1,
+                        rewardRate = formRewardRate,
                         goalId = formGoalId
                     )
                     formTitle = ""
@@ -91,6 +96,7 @@ fun HabitsScreen(
                     formGoalId = null
                     formCustomFrequency = false
                     formIntervalText = ""
+                    formRewardRate = BigDecimal.ONE
                     formOpen = false
                 },
                 onCloseClick = { formOpen = false }

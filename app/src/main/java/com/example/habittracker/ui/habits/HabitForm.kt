@@ -20,8 +20,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.example.habittracker.model.SavingsGoal
+import java.math.BigDecimal
 import com.example.habittracker.ui.components.FrequencyPicker
 import com.example.habittracker.ui.components.GoalPicker
+import com.example.habittracker.ui.components.RewardStepper
 import com.example.habittracker.ui.components.intervalDaysFrom
 
 @Composable
@@ -34,6 +36,8 @@ fun HabitForm(
     onCustomFrequencyChange: (Boolean) -> Unit,
     intervalText: String,
     onIntervalTextChange: (String) -> Unit,
+    rewardRate: BigDecimal,
+    onRewardRateChange: (BigDecimal) -> Unit,
     goals: List<SavingsGoal>,
     goalId: Long?,
     onGoalChange: (Long?) -> Unit,
@@ -93,6 +97,8 @@ fun HabitForm(
                 daysText = intervalText,
                 onDaysTextChange = onIntervalTextChange
             )
+
+            RewardStepper(rate = rewardRate, onRateChange = onRewardRateChange)
 
             GoalPicker(
                 goals = goals,

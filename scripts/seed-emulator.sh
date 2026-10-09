@@ -6,7 +6,7 @@ set -euo pipefail
 
 PKG=io.github.marshallhelenm.habitpiggy
 DB=habit_tracker.db
-EXPECTED_VERSION=1
+EXPECTED_VERSION=2
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 ADB="${ADB:-$(command -v adb || echo "$HOME/Library/Android/sdk/platform-tools/adb")}"
 BACKUP="$ROOT/build/db-backups/$(date +%Y%m%d-%H%M%S)"

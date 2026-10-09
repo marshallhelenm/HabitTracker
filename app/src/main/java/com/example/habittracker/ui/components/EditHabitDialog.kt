@@ -39,6 +39,7 @@ fun EditHabitDialog(
     }
     val intervalDays = intervalDaysFrom(customFrequency, intervalText)
     var goalId by rememberSaveable(habit.id) { mutableStateOf(habit.goalId) }
+    var rewardRate by rememberSaveable(habit.id) { mutableStateOf(habit.rewardRate) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -67,6 +68,8 @@ fun EditHabitDialog(
                     daysText = intervalText,
                     onDaysTextChange = { intervalText = it }
                 )
+
+                RewardStepper(rate = rewardRate, onRateChange = { rewardRate = it })
 
                 GoalPicker(
                     goals = goals,
@@ -97,7 +100,8 @@ fun EditHabitDialog(
                             description = description,
                             tracking = tracking,
                             intervalDays = intervalDays ?: habit.intervalDays,
-                            goalId = goalId
+                            goalId = goalId,
+                            rewardRate = rewardRate
                         )
                     )
                 }

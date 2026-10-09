@@ -2,6 +2,7 @@ package com.example.habittracker.ui.components
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -12,6 +13,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.LocalFireDepartment
+import androidx.compose.material.icons.filled.MonetizationOn
 import androidx.compose.material.icons.filled.Savings
 import androidx.compose.material.icons.outlined.RadioButtonUnchecked
 import androidx.compose.material3.Card
@@ -33,9 +35,11 @@ import java.time.temporal.ChronoUnit
 import java.util.Locale
 import com.example.habittracker.model.Habit
 import com.example.habittracker.ui.LocalToday
+import com.example.habittracker.ui.formatMoney
 import com.example.habittracker.viewmodel.dueBy
 import com.example.habittracker.viewmodel.effectiveStreak
 import com.example.habittracker.viewmodel.isCompletedOn
+import com.example.habittracker.viewmodel.nextPayout
 
 @Composable
 fun HabitCard(
@@ -45,6 +49,8 @@ fun HabitCard(
     headerActions: (@Composable RowScope.() -> Unit)? = null,
     footerActions: (@Composable RowScope.() -> Unit)? = null,
     goalLabel: String? = null,
+    // True on Home, where the card shows what the next check-in pays; elsewhere it shows the rate.
+    showNextPayout: Boolean = false,
     modifier: Modifier = Modifier
 ) {
     val today = LocalToday.current
@@ -135,20 +141,25 @@ fun HabitCard(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(6.dp)
             ) {
-                // Chips get whatever width the actions leave, and the goal chip truncates first,
-                // so trailing controls like the Track switch are never pushed off the card.
-                Row(
+                // Chips get whatever width the actions leave and wrap onto another line when they
+                // don't fit, so trailing controls like the Track switch are never pushed off the card.
+                FlowRow(
                     modifier = Modifier.weight(1f),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    itemVerticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    verticalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
                     StreakChip(streak = effectiveStreak(habit, today), daily = habit.intervalDays == 1)
+                    RewardChip(
+                        text = when {
+                            !showNextPayout -> "${formatMoney(habit.rewardRate)} × streak"
+                            !completedToday -> "+${formatMoney(nextPayout(habit, today))}"
+                            habit.intervalDays == 1 -> "+${formatMoney(nextPayout(habit, today))} tomorrow"
+                            else -> "+${formatMoney(nextPayout(habit, today))} next time"
+                        }
+                    )
                     if (goalLabel != null) {
-                        GoalChip(
-                            label = goalLabel,
-                            onGoldCard = completedToday,
-                            modifier = Modifier.weight(1f, fill = false)
-                        )
+                        GoalChip(label = goalLabel, onGoldCard = completedToday)
                     }
                 }
                 if (footerActions != null) {
@@ -187,6 +198,29 @@ private fun StreakChip(streak: Int, daily: Boolean) {
                 },
                 style = MaterialTheme.typography.labelMedium
             )
+        }
+    }
+}
+
+@Composable
+private fun RewardChip(text: String) {
+    Surface(
+        shape = CircleShape,
+        color = MaterialTheme.colorScheme.surfaceContainerLowest,
+        contentColor = MaterialTheme.colorScheme.onTertiaryContainer
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            Icon(
+                imageVector = Icons.Filled.MonetizationOn,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.tertiary,
+                modifier = Modifier.size(16.dp)
+            )
+            Text(text = text, style = MaterialTheme.typography.labelMedium, maxLines = 1)
         }
     }
 }

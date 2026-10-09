@@ -11,6 +11,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.math.BigDecimal
 import java.time.LocalDate
 
 class HabitViewModel(
@@ -31,7 +32,13 @@ class HabitViewModel(
         }
     }
 
-    fun addHabit(title: String, description: String, intervalDays: Int = 1, goalId: Long? = null) {
+    fun addHabit(
+        title: String,
+        description: String,
+        intervalDays: Int = 1,
+        rewardRate: BigDecimal = BigDecimal.ONE,
+        goalId: Long? = null
+    ) {
         val normalizedTitle = title.trim()
         if (normalizedTitle.isEmpty()) {
             return
@@ -44,6 +51,7 @@ class HabitViewModel(
                         title = normalizedTitle,
                         description = description.trim(),
                         intervalDays = intervalDays,
+                        rewardRate = rewardRate,
                         goalId = goalId
                     )
                 )
