@@ -1,12 +1,12 @@
 {
   "formatVersion": 1,
   "database": {
-    "version": 5,
-    "identityHash": "8aeb7a48b798024f1bee1fbd2ec88242",
+    "version": 1,
+    "identityHash": "9f43d2ea9106dc95fa0cea52d522162b",
     "entities": [
       {
         "tableName": "habits",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `title` TEXT NOT NULL, `description` TEXT NOT NULL, `frequency` TEXT NOT NULL, `currentStreak` INTEGER NOT NULL, `longestStreak` INTEGER NOT NULL, `createdAt` TEXT NOT NULL, `lastCompletedOn` TEXT, `tracking` INTEGER NOT NULL, `goalId` INTEGER, `prevLastCompletedOn` TEXT, `prevCurrentStreak` INTEGER, `prevLongestStreak` INTEGER)",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `title` TEXT NOT NULL, `description` TEXT NOT NULL, `intervalDays` INTEGER NOT NULL DEFAULT 1, `currentStreak` INTEGER NOT NULL, `longestStreak` INTEGER NOT NULL, `createdAt` TEXT NOT NULL, `lastCompletedOn` TEXT, `tracking` INTEGER NOT NULL, `goalId` INTEGER, `prevLastCompletedOn` TEXT, `prevCurrentStreak` INTEGER, `prevLongestStreak` INTEGER)",
         "fields": [
           {
             "fieldPath": "id",
@@ -27,10 +27,11 @@
             "notNull": true
           },
           {
-            "fieldPath": "frequency",
-            "columnName": "frequency",
-            "affinity": "TEXT",
-            "notNull": true
+            "fieldPath": "intervalDays",
+            "columnName": "intervalDays",
+            "affinity": "INTEGER",
+            "notNull": true,
+            "defaultValue": "1"
           },
           {
             "fieldPath": "currentStreak",
@@ -102,7 +103,7 @@
       },
       {
         "tableName": "savings_goals",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `name` TEXT NOT NULL, `targetAmount` TEXT NOT NULL, `currentAmount` TEXT NOT NULL, `dueDate` TEXT, `dailyEarningsCap` TEXT, `status` TEXT NOT NULL, `createdAt` TEXT NOT NULL, `pinned` INTEGER NOT NULL)",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `name` TEXT NOT NULL, `targetAmount` TEXT NOT NULL, `currentAmount` TEXT NOT NULL, `dueDate` TEXT, `dailyEarningsCap` TEXT, `status` TEXT NOT NULL, `createdAt` TEXT NOT NULL, `pinned` INTEGER NOT NULL, `sortOrder` INTEGER NOT NULL DEFAULT 0)",
         "fields": [
           {
             "fieldPath": "id",
@@ -155,6 +156,13 @@
             "columnName": "pinned",
             "affinity": "INTEGER",
             "notNull": true
+          },
+          {
+            "fieldPath": "sortOrder",
+            "columnName": "sortOrder",
+            "affinity": "INTEGER",
+            "notNull": true,
+            "defaultValue": "0"
           }
         ],
         "primaryKey": {
@@ -231,7 +239,7 @@
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '8aeb7a48b798024f1bee1fbd2ec88242')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '9f43d2ea9106dc95fa0cea52d522162b')"
     ]
   }
 }

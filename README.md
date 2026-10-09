@@ -64,7 +64,7 @@ Builds print long `D8: An error occurred when parsing kotlin metadata` warnings.
 |---|---|
 | `model` | Room entities: `Habit`, `SavingsGoal`, `Deposit` |
 | `data` | Repository interfaces and their Room implementations |
-| `data.local` | Database, DAOs, type converters and migrations |
+| `data.local` | Database, DAOs and type converters |
 | `viewmodel` | `HabitViewModel`, `SavingsGoalViewModel` and the earnings planner |
 | `ui` | App shell, navigation and shared habit actions |
 | `ui.home`, `ui.habits`, `ui.goals` | The three screens |
@@ -73,14 +73,14 @@ Builds print long `D8: An error occurred when parsing kotlin metadata` warnings.
 
 ## Database and migrations
 
-- The Room database is at **version 5**. Each version's schema is exported to `app/schemas/`, and those files are committed.
-- **Every schema change needs a `Migration`** in `data/local/Migrations.kt`, added to the database builder in `HabitTrackerDatabase.kt`. The database is never wiped and recreated on a version mismatch: without a migration, the app fails on launch rather than losing data.
-- Migration tests in `app/src/androidTest/.../MigrationTest.kt` build each old version, migrate it, and let Room validate the result against the exported schema.
+- The Room database is at **version 1**. Each version's schema is exported to `app/schemas/`, and those files are committed.
+- **Every schema change needs a `Migration`**: bump the version, add the migration in `data/local/` and register it on the database builder in `HabitTrackerDatabase.kt`. The database is never wiped and recreated on a version mismatch: without a migration, the app fails on launch rather than losing data.
+- Each migration should have an instrumented test that uses `MigrationTestHelper` to build the old version, migrate it, and let Room validate the result against the exported schema.
 
 ## Testing
 
 - **Unit tests** (`app/src/test`) cover the earnings rules, the ViewModel's goal logic (using a fake repository) and the list ordering. They run on your computer, with no device needed.
-- **Instrumented tests** (`app/src/androidTest`) cover migrations and DAO queries, and need an emulator or device. `./gradlew connectedAndroidTest` uninstalls the app afterwards, which deletes its data. To keep your data, install and run the tests directly:
+- **Instrumented tests** (`app/src/androidTest`) cover DAO queries, and need an emulator or device. `./gradlew connectedAndroidTest` uninstalls the app afterwards, which deletes its data. To keep your data, install and run the tests directly:
 
 ```bash
 ./gradlew :app:installDebug :app:installDebugAndroidTest

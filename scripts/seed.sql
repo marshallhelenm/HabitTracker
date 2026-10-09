@@ -1,4 +1,4 @@
--- Test seed data for Habit Piggy (Room schema version 7).
+-- Test seed data for Habit Piggy (Room schema version 1).
 -- Dates are relative to today so "done today" / "streak alive" states stay valid whenever this runs.
 -- Covers: several goals at different fill levels (0%, ~1%, partial, ~full, over 100%), a long goal name,
 -- an archived goal (hidden from Home), assigned / unassigned / untracked habits, completed-today habits,
