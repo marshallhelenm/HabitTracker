@@ -3,8 +3,6 @@
 Planned work, roughly in priority order.
 
 ## Up next
-- **Weekly habit streaks** — `WEEKLY` habits currently behave like daily ones. Planned: the streak counts consecutive calendar weeks (starting on the locale's first day of the week), a habit is checked once per week and shows as done for the rest of that week, and earns once per week.
-- **Custom schedules** — `CUSTOM` frequency exists but has no way to say what the schedule is (e.g. Mon/Wed/Fri); it's treated as daily until this is built.
 - **Reorder goals** — let the Goals screen reorder goals (e.g. drag handles) to control the order they appear in the Home carousel after the pinned goal.
 
 ## Later
@@ -18,3 +16,4 @@ Planned work, roughly in priority order.
 - **Goal completion** — goals complete automatically at their target, extra earnings overflow to the pinned goal, completed goals sit at the end of the Home carousel, and changing a target reopens or completes a goal.
 - **Goals screen sorting** — sort by pinned/A–Z/progress (tap again to reverse) and hide completed goals.
 - **Reset streaks on missed days (daily habits)** — a streak shows as broken ("Start a new streak") as soon as a day is missed, worked out from the last completion date rather than rewritten in the database; the on-screen date rolls over at midnight and on returning to the app.
+- **Custom-interval habits** — a habit is daily or "at least once every N days" (`intervalDays`); the streak counts completions in a row and breaks once more than N days pass without one. Custom habits show when they're next due. Replaced the old `WEEKLY`/`CUSTOM` frequencies (weekly habits migrated to every 7 days).

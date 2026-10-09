@@ -1,5 +1,6 @@
 package com.example.habittracker.model
 
+import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.Index
 import androidx.room.PrimaryKey
@@ -15,7 +16,9 @@ data class Habit(
     val id: Long = 0,
     val title: String,
     val description: String = "",
-    val frequency: HabitFrequency = HabitFrequency.DAILY,
+    // The streak survives while the habit is done at least once every this many days; 1 means daily.
+    @ColumnInfo(defaultValue = "1")
+    val intervalDays: Int = 1,
     val currentStreak: Int = 0,
     val longestStreak: Int = 0,
     val createdAt: LocalDateTime = LocalDateTime.now(),
@@ -27,9 +30,3 @@ data class Habit(
     val prevCurrentStreak: Int? = null,
     val prevLongestStreak: Int? = null
 )
-
-enum class HabitFrequency {
-    DAILY,
-    WEEKLY,
-    CUSTOM
-}

@@ -30,11 +30,11 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.habittracker.model.Habit
-import com.example.habittracker.model.HabitFrequency
 import com.example.habittracker.model.SavingsGoal
 import com.example.habittracker.model.SavingsGoalStatus
 import com.example.habittracker.ui.components.EditHabitDialog
 import com.example.habittracker.ui.components.HabitCard
+import com.example.habittracker.ui.components.intervalDaysFrom
 import com.example.habittracker.viewmodel.HabitViewModel
 import com.example.habittracker.viewmodel.SavingsGoalViewModel
 import com.example.habittracker.ui.completeHabit
@@ -56,7 +56,8 @@ fun HabitsScreen(
     var formOpen by rememberSaveable { mutableStateOf(false) }
     var formTitle by rememberSaveable { mutableStateOf("") }
     var formDescription by rememberSaveable { mutableStateOf("") }
-    var formFrequency by rememberSaveable { mutableStateOf(HabitFrequency.DAILY) }
+    var formCustomFrequency by rememberSaveable { mutableStateOf(false) }
+    var formIntervalText by rememberSaveable { mutableStateOf("") }
     var formGoalId by rememberSaveable { mutableStateOf<Long?>(null) }
 
     Column(
@@ -71,6 +72,10 @@ fun HabitsScreen(
                 onTitleChange = { formTitle = it },
                 description = formDescription,
                 onDescriptionChange = { formDescription = it },
+                customFrequency = formCustomFrequency,
+                onCustomFrequencyChange = { formCustomFrequency = it },
+                intervalText = formIntervalText,
+                onIntervalTextChange = { formIntervalText = it },
                 goals = goals,
                 goalId = formGoalId,
                 onGoalChange = { formGoalId = it },
@@ -78,12 +83,14 @@ fun HabitsScreen(
                     viewModel.addHabit(
                         title = formTitle,
                         description = formDescription,
+                        intervalDays = intervalDaysFrom(formCustomFrequency, formIntervalText) ?: 1,
                         goalId = formGoalId
                     )
                     formTitle = ""
                     formDescription = ""
                     formGoalId = null
-                    formFrequency = HabitFrequency.DAILY
+                    formCustomFrequency = false
+                    formIntervalText = ""
                     formOpen = false
                 },
                 onCloseClick = { formOpen = false }

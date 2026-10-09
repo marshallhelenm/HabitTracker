@@ -1,7 +1,6 @@
 package com.example.habittracker.data.local
 
 import androidx.room.TypeConverter
-import com.example.habittracker.model.HabitFrequency
 import com.example.habittracker.model.SavingsGoalStatus
 import java.math.BigDecimal
 import java.time.LocalDate
@@ -25,12 +24,6 @@ class Converters {
 
     @TypeConverter
     fun stringToBigDecimal(value: String?): BigDecimal? = value?.let(::BigDecimal)
-
-    @TypeConverter
-    fun habitFrequencyToString(value: HabitFrequency?): String? = value?.name
-
-    @TypeConverter
-    fun stringToHabitFrequency(value: String?): HabitFrequency? = value?.let(HabitFrequency::valueOf)
 
     @TypeConverter
     fun savingsGoalStatusToString(value: SavingsGoalStatus?): String? = value?.name

@@ -26,8 +26,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
+import java.time.format.TextStyle
+import java.time.temporal.ChronoUnit
+import java.util.Locale
 import com.example.habittracker.model.Habit
 import com.example.habittracker.ui.LocalToday
+import com.example.habittracker.viewmodel.dueBy
 import com.example.habittracker.viewmodel.effectiveStreak
 import com.example.habittracker.viewmodel.isCompletedOn
 
@@ -115,6 +121,15 @@ fun HabitCard(
                 )
             }
 
+            val deadline = dueBy(habit, today)
+            if (habit.intervalDays > 1 && deadline != null && !completedToday) {
+                Text(
+                    text = dueLabel(deadline, today),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.primary
+                )
+            }
+
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
@@ -127,7 +142,7 @@ fun HabitCard(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
-                    StreakChip(streak = effectiveStreak(habit, today))
+                    StreakChip(streak = effectiveStreak(habit, today), daily = habit.intervalDays == 1)
                     if (goalLabel != null) {
                         GoalChip(
                             label = goalLabel,
@@ -145,7 +160,7 @@ fun HabitCard(
 }
 
 @Composable
-private fun StreakChip(streak: Int) {
+private fun StreakChip(streak: Int, daily: Boolean) {
     Surface(
         shape = CircleShape,
         color = MaterialTheme.colorScheme.surfaceContainerLowest,
@@ -163,10 +178,11 @@ private fun StreakChip(streak: Int) {
                 modifier = Modifier.size(16.dp)
             )
             Text(
-                text = when (streak) {
+                text = when {
                     // Encouraging rather than "0 day streak" for a missed day or a brand-new habit.
-                    0 -> "Start a new streak"
-                    1 -> "1 day streak"
+                    streak == 0 -> "Start a new streak"
+                    // Custom habits count completions, not days.
+                    !daily -> "$streak in a row"
                     else -> "$streak day streak"
                 },
                 style = MaterialTheme.typography.labelMedium
@@ -206,5 +222,17 @@ private fun GoalChip(label: String, onGoldCard: Boolean, modifier: Modifier = Mo
                 overflow = TextOverflow.Ellipsis
             )
         }
+    }
+}
+
+// When a custom habit must next be done to keep its streak: "Due today", "Due tomorrow", a weekday
+// within the coming week, otherwise a short date.
+private fun dueLabel(deadline: LocalDate, today: LocalDate): String {
+    val daysLeft = ChronoUnit.DAYS.between(today, deadline)
+    return when {
+        daysLeft <= 0L -> "Due today"
+        daysLeft == 1L -> "Due tomorrow"
+        daysLeft < 7L -> "Due by " + deadline.dayOfWeek.getDisplayName(TextStyle.FULL, Locale.getDefault())
+        else -> "Due by " + deadline.format(DateTimeFormatter.ofPattern("MMM d", Locale.getDefault()))
     }
 }

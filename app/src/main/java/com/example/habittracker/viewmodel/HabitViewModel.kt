@@ -31,7 +31,7 @@ class HabitViewModel(
         }
     }
 
-    fun addHabit(title: String, description: String, goalId: Long? = null) {
+    fun addHabit(title: String, description: String, intervalDays: Int = 1, goalId: Long? = null) {
         val normalizedTitle = title.trim()
         if (normalizedTitle.isEmpty()) {
             return
@@ -43,6 +43,7 @@ class HabitViewModel(
                     Habit(
                         title = normalizedTitle,
                         description = description.trim(),
+                        intervalDays = intervalDays,
                         goalId = goalId
                     )
                 )

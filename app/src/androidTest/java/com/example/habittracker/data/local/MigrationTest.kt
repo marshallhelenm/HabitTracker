@@ -187,4 +187,52 @@ class MigrationTest {
             assertEquals(0, c.getInt(0))
         }
     }
+
+    @Test
+    fun migrate5To6_turnsFrequencyIntoIntervalDays() {
+        helper.createDatabase(testDb, 5).apply {
+            execSQL(
+                """
+                INSERT INTO habits (id, title, description, frequency, currentStreak, longestStreak, createdAt, lastCompletedOn, tracking, goalId, prevLastCompletedOn, prevCurrentStreak, prevLongestStreak)
+                VALUES
+                  (1, 'Stretch', 'Morning routine', 'DAILY', 4, 9, '2026-09-01T08:30', '2026-10-06', 1, 3, '2026-10-05', 3, 9),
+                  (2, 'Meal prep', '', 'WEEKLY', 2, 2, '2026-09-02T09:00', '2026-10-04', 0, NULL, NULL, NULL, NULL),
+                  (3, 'Call mum', '', 'CUSTOM', 1, 1, '2026-09-03T09:00', NULL, 1, NULL, NULL, NULL, NULL)
+                """.trimIndent()
+            )
+            close()
+        }
+
+        // Validates against 6.json, so a mismatch between the migration and the entity fails here.
+        val db = helper.runMigrationsAndValidate(testDb, 6, true, MIGRATION_5_6)
+
+        db.query("SELECT id, intervalDays FROM habits ORDER BY id").use { c ->
+            val intervals = buildList { while (c.moveToNext()) add(c.getLong(0) to c.getInt(1)) }
+            assertEquals(listOf(1L to 1, 2L to 7, 3L to 1), intervals)
+        }
+        db.query(
+            "SELECT title, description, currentStreak, longestStreak, createdAt, lastCompletedOn, tracking, goalId, " +
+                "prevLastCompletedOn, prevCurrentStreak, prevLongestStreak FROM habits WHERE id = 1"
+        ).use { c ->
+            assertTrue(c.moveToFirst())
+            assertEquals("Stretch", c.getString(0))
+            assertEquals("Morning routine", c.getString(1))
+            assertEquals(4, c.getInt(2))
+            assertEquals(9, c.getInt(3))
+            assertEquals("2026-09-01T08:30", c.getString(4))
+            assertEquals("2026-10-06", c.getString(5))
+            assertEquals(1, c.getInt(6))
+            assertEquals(3, c.getInt(7))
+            assertEquals("2026-10-05", c.getString(8))
+            assertEquals(3, c.getInt(9))
+            assertEquals(9, c.getInt(10))
+        }
+        // New rows keep counting up from the old ids.
+        db.execSQL("INSERT INTO habits (title, description, currentStreak, longestStreak, createdAt, tracking) VALUES ('New', '', 0, 0, '2026-10-08T10:00', 1)")
+        db.query("SELECT id, intervalDays FROM habits WHERE title = 'New'").use { c ->
+            assertTrue(c.moveToFirst())
+            assertEquals(4, c.getInt(0))
+            assertEquals(1, c.getInt(1))
+        }
+    }
 }

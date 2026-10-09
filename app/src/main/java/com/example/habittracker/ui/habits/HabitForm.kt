@@ -19,9 +19,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.example.habittracker.model.HabitFrequency
 import com.example.habittracker.model.SavingsGoal
+import com.example.habittracker.ui.components.FrequencyPicker
 import com.example.habittracker.ui.components.GoalPicker
+import com.example.habittracker.ui.components.intervalDaysFrom
 
 @Composable
 fun HabitForm(
@@ -29,6 +30,10 @@ fun HabitForm(
     onTitleChange: (String) -> Unit,
     description: String,
     onDescriptionChange: (String) -> Unit,
+    customFrequency: Boolean,
+    onCustomFrequencyChange: (Boolean) -> Unit,
+    intervalText: String,
+    onIntervalTextChange: (String) -> Unit,
     goals: List<SavingsGoal>,
     goalId: Long?,
     onGoalChange: (Long?) -> Unit,
@@ -82,6 +87,13 @@ fun HabitForm(
                 singleLine = true
             )
 
+            FrequencyPicker(
+                custom = customFrequency,
+                onCustomChange = onCustomFrequencyChange,
+                daysText = intervalText,
+                onDaysTextChange = onIntervalTextChange
+            )
+
             GoalPicker(
                 goals = goals,
                 selectedGoalId = goalId,
@@ -90,7 +102,7 @@ fun HabitForm(
 
             Button(
                 onClick = onSubmit,
-                enabled = title.isNotBlank(),
+                enabled = title.isNotBlank() && intervalDaysFrom(customFrequency, intervalText) != null,
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text("Add Habit")
