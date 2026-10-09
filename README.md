@@ -58,6 +58,24 @@ Run lint:
 
 Builds print long `D8: An error occurred when parsing kotlin metadata` warnings. These come from Kotlin 2.4 being newer than the bundled Android build tools. They're only warnings, and the build still succeeds.
 
+### Release builds
+
+Release builds are signed with a key kept outside the repo. Copy `keystore.properties.example` to `keystore.properties` (it's gitignored) and fill in the passwords. Without that file, release builds are unsigned and won't install.
+
+```bash
+./gradlew :app:assembleRelease
+```
+
+The signed APK is written to `app/build/outputs/apk/release/app-release.apk`. Install it on a phone with USB debugging enabled:
+
+```bash
+adb install -r app/build/outputs/apk/release/app-release.apk
+```
+
+- Every update must be signed with the same key. A lost key means uninstalling, and losing the app's data, before a new build will install.
+- Bump `versionCode` in `app/build.gradle.kts` for each update you install over an existing one.
+- Debug and release builds share an app ID but not a signature, so a device holds one or the other. Uninstall one before installing the other.
+
 ## Project structure
 
 | Package | Contents |
@@ -87,7 +105,7 @@ Builds print long `D8: An error occurred when parsing kotlin metadata` warnings.
 ```
 
 ```bash
-adb shell am instrument -w com.example.habittracker.test/androidx.test.runner.AndroidJUnitRunner
+adb shell am instrument -w io.github.marshallhelenm.habitpiggy.test/androidx.test.runner.AndroidJUnitRunner
 ```
 
 ## Test data

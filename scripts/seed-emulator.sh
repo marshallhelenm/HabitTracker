@@ -4,7 +4,7 @@
 # Requires: adb, sqlite3, and a debug build of the app installed (run-as needs a debuggable app).
 set -euo pipefail
 
-PKG=com.example.habittracker
+PKG=io.github.marshallhelenm.habitpiggy
 DB=habit_tracker.db
 EXPECTED_VERSION=1
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
