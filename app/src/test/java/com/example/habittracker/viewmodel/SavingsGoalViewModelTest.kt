@@ -493,4 +493,74 @@ class SavingsGoalViewModelTest {
         assertEquals(0, BigDecimal("5").compareTo(repo.amountOf(1)))
         assertEquals(listOf(EarningsNotice.DailyCapReached("Goal 1", BigDecimal("5"))), vm.notices.value)
     }
+
+    @Test
+    fun editingBalance_setsAmountWithoutLoggingADeposit() = runTest(dispatcher) {
+        val repo = FakeSavingsGoalRepository(listOf(goal(1, pinned = true, saved = "40", cap = "5")))
+        val vm = viewModelWith(repo)
+
+        assertTrue(vm.updateSavingsGoal(1, "Goal 1", "100", "5", balanceText = "62.50"))
+        advanceUntilIdle()
+
+        assertEquals(0, BigDecimal("62.50").compareTo(repo.amountOf(1)))
+        assertTrue("manual changes aren't deposits", repo.deposits.isEmpty())
+        // The daily cap is untouched, so a habit can still earn the full $5 today.
+        vm.recordEarningsForHabitCompletion(habit(goalId = 1, streak = 5), goal = null)
+        advanceUntilIdle()
+        assertEquals(0, BigDecimal("67.50").compareTo(repo.amountOf(1)))
+    }
+
+    @Test
+    fun editingBalance_withoutBalanceText_keepsTheAmount() = runTest(dispatcher) {
+        val repo = FakeSavingsGoalRepository(listOf(goal(1, pinned = true, saved = "40")))
+        val vm = viewModelWith(repo)
+
+        assertTrue(vm.updateSavingsGoal(1, "Renamed", "100", ""))
+        advanceUntilIdle()
+
+        assertEquals(0, BigDecimal("40").compareTo(repo.amountOf(1)))
+    }
+
+    @Test
+    fun editingBalance_toTheTarget_completesTheGoal_andBelowItReopens() = runTest(dispatcher) {
+        val repo = FakeSavingsGoalRepository(listOf(goal(1, pinned = true, saved = "40", order = 0), goal(2, order = 1)))
+        val vm = viewModelWith(repo)
+
+        assertTrue(vm.updateSavingsGoal(1, "Goal 1", "100", "", balanceText = "120"))
+        advanceUntilIdle()
+        assertEquals(SavingsGoalStatus.COMPLETED, repo.getSavingsGoalById(1)!!.status)
+        assertEquals("extra stays in the goal", 0, BigDecimal("120").compareTo(repo.amountOf(1)))
+        assertTrue("pin moves on", repo.getSavingsGoalById(2)!!.pinned)
+
+        assertTrue(vm.updateSavingsGoal(1, "Goal 1", "100", "", balanceText = "99.99"))
+        advanceUntilIdle()
+        assertEquals(SavingsGoalStatus.ACTIVE, repo.getSavingsGoalById(1)!!.status)
+    }
+
+    @Test
+    fun editingBalance_rejectsNegativeAndFractionalCents() = runTest(dispatcher) {
+        val repo = FakeSavingsGoalRepository(listOf(goal(1, pinned = true, saved = "40")))
+        val vm = viewModelWith(repo)
+
+        assertFalse(vm.updateSavingsGoal(1, "Goal 1", "100", "", balanceText = "-1"))
+        assertFalse(vm.updateSavingsGoal(1, "Goal 1", "100", "", balanceText = "1.005"))
+        assertFalse(vm.updateSavingsGoal(1, "Goal 1", "100", "", balanceText = "lots"))
+        assertTrue(vm.updateSavingsGoal(1, "Goal 1", "100", "", balanceText = "0"))
+        assertTrue(vm.updateSavingsGoal(1, "Goal 1", "100", "", balanceText = "1.50"))
+    }
+
+    @Test
+    fun uncheckingAfterBalanceWasLowered_neverGoesBelowZero() = runTest(dispatcher) {
+        val repo = FakeSavingsGoalRepository(listOf(goal(1, pinned = true)))
+        val vm = viewModelWith(repo)
+        vm.recordEarningsForHabitCompletion(habit(goalId = 1, streak = 4), goal = null)
+        advanceUntilIdle()
+
+        assertTrue(vm.updateSavingsGoal(1, "Goal 1", "100", "", balanceText = "1"))
+        advanceUntilIdle()
+        vm.reverseEarningsForHabit(habit(goalId = 1, streak = 4))
+        advanceUntilIdle()
+
+        assertEquals(0, BigDecimal.ZERO.compareTo(repo.amountOf(1)))
+    }
 }

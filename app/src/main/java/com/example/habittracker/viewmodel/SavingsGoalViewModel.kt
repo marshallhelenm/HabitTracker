@@ -156,7 +156,15 @@ class SavingsGoalViewModel(
         return _savingsGoals.value.firstOrNull { it.id == id }
     }
 
-    fun updateSavingsGoal(id: Long, name: String, targetAmountText: String, earningsCapText: String): Boolean {
+    // balanceText, when given, overwrites the saved amount directly. It isn't logged as a deposit, so it
+    // doesn't count toward the daily cap.
+    fun updateSavingsGoal(
+        id: Long,
+        name: String,
+        targetAmountText: String,
+        earningsCapText: String,
+        balanceText: String? = null
+    ): Boolean {
         val existingGoal = _savingsGoals.value.firstOrNull { it.id == id } ?: return false
         val normalizedName = name.trim()
         if (normalizedName.isEmpty()) {
@@ -179,14 +187,21 @@ class SavingsGoalViewModel(
             parsed
         }
 
+        val balance = if (balanceText == null) {
+            existingGoal.currentAmount
+        } else {
+            parseBalance(balanceText) ?: return false
+        }
+
         viewModelScope.launch {
             withContext(ioDispatcher) {
                 repository.upsertSavingsGoal(
                     existingGoal.copy(
                         name = normalizedName,
                         targetAmount = targetAmount,
+                        currentAmount = balance,
                         dailyEarningsCap = earningsCap,
-                        status = statusAfterTargetChange(existingGoal, targetAmount)
+                        status = statusAfterEdit(existingGoal, targetAmount, balance)
                     )
                 )
             }
@@ -259,7 +274,8 @@ class SavingsGoalViewModel(
                     val goals = repository.getSavingsGoals().associateBy { it.id }.toMutableMap()
                     deposits.forEach { d ->
                         val g = goals[d.goalId] ?: return@forEach
-                        goals[d.goalId] = g.copy(currentAmount = g.currentAmount - d.amount)
+                        // The balance may have been lowered by hand since the deposit; never go below zero.
+                        goals[d.goalId] = g.copy(currentAmount = (g.currentAmount - d.amount).max(BigDecimal.ZERO))
                     }
                     val changed = deposits.map { it.goalId }.distinct().mapNotNull { goals[it] }.map { g ->
                         if (g.status == SavingsGoalStatus.COMPLETED && g.currentAmount < g.targetAmount) {
@@ -323,10 +339,11 @@ class SavingsGoalViewModel(
         }
     }
 
-    // Editing a target can finish a goal (target lowered to what's saved) or reopen one (target raised).
-    private fun statusAfterTargetChange(goal: SavingsGoal, newTarget: BigDecimal): SavingsGoalStatus = when {
-        goal.status == SavingsGoalStatus.ACTIVE && goal.currentAmount >= newTarget -> SavingsGoalStatus.COMPLETED
-        goal.status == SavingsGoalStatus.COMPLETED && goal.currentAmount < newTarget -> SavingsGoalStatus.ACTIVE
+    // Editing the target or balance can finish a goal (balance now at or past the target) or reopen one
+    // (balance now short of it). Archived and paused goals keep their status.
+    private fun statusAfterEdit(goal: SavingsGoal, newTarget: BigDecimal, newBalance: BigDecimal): SavingsGoalStatus = when {
+        goal.status == SavingsGoalStatus.ACTIVE && newBalance >= newTarget -> SavingsGoalStatus.COMPLETED
+        goal.status == SavingsGoalStatus.COMPLETED && newBalance < newTarget -> SavingsGoalStatus.ACTIVE
         else -> goal.status
     }
 
@@ -356,3 +373,7 @@ fun orderWithMoved(goals: List<SavingsGoal>, movedIds: List<Long>): List<Long> {
     val movedSet = movedIds.toSet()
     return current.map { id -> if (id in movedSet && moved.hasNext()) moved.next() else id }
 }
+
+// A manually entered balance: zero or more, in whole cents. Null if the text isn't one.
+fun parseBalance(text: String): BigDecimal? =
+    text.trim().toBigDecimalOrNull()?.takeIf { it >= BigDecimal.ZERO && it.stripTrailingZeros().scale() <= 2 }

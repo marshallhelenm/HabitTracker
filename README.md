@@ -18,6 +18,7 @@ Built with Kotlin, Jetpack Compose (Material 3) and Room.
 - A goal's **daily cap** limits the total it can receive per day across all habits. Once it's hit, completions still count toward streaks but earn nothing.
 - A goal fills exactly to its target and is marked **Completed**. Anything extra overflows to the pinned goal, within that goal's own cap. If the pinned goal is the one completing, the pin moves to the first active goal in your order.
 - Every deposit is logged, which is what makes the daily cap and un-checking possible.
+- A goal's balance can be corrected by hand under **More options** on its edit screen, after a confirmation. This isn't logged as a deposit, so it doesn't use up the daily cap; reaching or dropping below the target completes or reopens the goal.
 
 The rules live in `viewmodel/EarningsPlanner.kt` (a pure function, `planEarnings`) and are applied in `SavingsGoalViewModel.recordEarningsForHabitCompletion`.
 

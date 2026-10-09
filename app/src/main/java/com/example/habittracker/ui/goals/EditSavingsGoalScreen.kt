@@ -6,39 +6,64 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ExpandLess
+import androidx.compose.material.icons.filled.ExpandMore
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.example.habittracker.model.SavingsGoal
+import com.example.habittracker.ui.formatMoney
+import com.example.habittracker.viewmodel.parseBalance
 import java.math.BigDecimal
 
 @Composable
 fun EditSavingsGoalScreen(
     goal: SavingsGoal,
-    onSave: (name: String, targetAmountText: String, earningsCapText: String) -> Boolean,
+    // balanceText is null unless the balance was changed under More options.
+    onSave: (name: String, targetAmountText: String, earningsCapText: String, balanceText: String?) -> Boolean,
     onCancel: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     var name by rememberSaveable(goal.id) { mutableStateOf(goal.name) }
     var targetAmountText by rememberSaveable(goal.id) { mutableStateOf(goal.targetAmount.toPlainString()) }
     var earningsCapText by rememberSaveable(goal.id) { mutableStateOf(goal.dailyEarningsCap?.toPlainString() ?: "") }
+    var balanceText by rememberSaveable(goal.id) { mutableStateOf(goal.currentAmount.toPlainString()) }
     var inputError by rememberSaveable(goal.id) { mutableStateOf<String?>(null) }
+    // Balance editing is tucked away and starts closed every time, so it isn't changed by accident.
+    var moreOptionsOpen by remember(goal.id) { mutableStateOf(false) }
+    var pendingBalance by remember(goal.id) { mutableStateOf<BigDecimal?>(null) }
+
+    fun save(newBalanceText: String?) {
+        if (onSave(name, targetAmountText, earningsCapText, newBalanceText)) {
+            inputError = null
+        } else {
+            inputError = "Unable to save changes. Please try again."
+        }
+    }
 
     Column(
         modifier = modifier
             .fillMaxSize()
+            .verticalScroll(rememberScrollState())
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
@@ -85,6 +110,27 @@ fun EditSavingsGoalScreen(
                     singleLine = true
                 )
 
+                TextButton(onClick = { moreOptionsOpen = !moreOptionsOpen }) {
+                    Text("More options")
+                    Icon(
+                        imageVector = if (moreOptionsOpen) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore,
+                        contentDescription = null
+                    )
+                }
+
+                if (moreOptionsOpen) {
+                    OutlinedTextField(
+                        value = balanceText,
+                        onValueChange = { balanceText = it },
+                        label = { Text("Current balance") },
+                        supportingText = {
+                            Text("Changes the saved amount directly. It isn't counted as earnings or toward the daily cap.")
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true
+                    )
+                }
+
                 if (inputError != null) {
                     Text(
                         text = inputError!!,
@@ -113,12 +159,16 @@ fun EditSavingsGoalScreen(
                                     "If set, the daily earnings cap must be greater than zero."
                                 return@Button
                             }
+                            val newBalance = parseBalance(balanceText)
+                            if (newBalance == null) {
+                                inputError = "The balance must be zero or more, in dollars and cents."
+                                return@Button
+                            }
 
-                            val saved = onSave(name, targetAmountText, earningsCapText)
-                            if (!saved) {
-                                inputError = "Unable to save changes. Please try again."
+                            if (newBalance.compareTo(goal.currentAmount) != 0) {
+                                pendingBalance = newBalance
                             } else {
-                                inputError = null
+                                save(newBalanceText = null)
                             }
                         }
                     ) {
@@ -127,5 +177,30 @@ fun EditSavingsGoalScreen(
                 }
             }
         }
+    }
+
+    pendingBalance?.let { newBalance ->
+        AlertDialog(
+            onDismissRequest = { pendingBalance = null },
+            title = { Text("Change the balance?") },
+            text = {
+                Text(
+                    "Change ${goal.name}'s balance from ${formatMoney(goal.currentAmount)} to ${formatMoney(newBalance)}?"
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    pendingBalance = null
+                    save(newBalanceText = newBalance.toPlainString())
+                }) {
+                    Text("Change balance")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { pendingBalance = null }) {
+                    Text("Cancel")
+                }
+            }
+        )
     }
 }
