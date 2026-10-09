@@ -65,6 +65,8 @@ dependencies {
     implementation(libs.androidx.compose.material3)
     implementation(libs.androidx.compose.material.icons.extended)
     implementation(libs.google.material)
+    // Drag-to-reorder for lazy lists (Goals screen).
+    implementation(libs.reorderable)
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)
     // Pinned above lifecycle's transitive 1.7.3: room-testing needs 1.8+, and test APKs must share the app's version.

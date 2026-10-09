@@ -23,6 +23,10 @@ class RoomSavingsGoalRepository(
         savingsGoalDao.deleteAndUnassignHabits(id)
     }
 
+    override suspend fun setSavingsGoalOrder(orderedIds: List<Long>) {
+        savingsGoalDao.setOrder(orderedIds)
+    }
+
     override suspend fun earnedOn(goalId: Long, date: LocalDate): BigDecimal =
         depositDao.getForGoalOn(goalId, date).fold(BigDecimal.ZERO) { sum, deposit -> sum + deposit.amount }
 

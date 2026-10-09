@@ -69,9 +69,9 @@ fun planEarnings(
 }
 
 // The goal that is (or will become) pinned once `excluding` goals are no longer active:
-// the current pinned goal if it's still eligible, otherwise the oldest remaining active goal.
+// the current pinned goal if it's still eligible, otherwise the first remaining active goal in the user's order.
 fun nextPinnedGoal(goals: List<SavingsGoal>, excluding: Collection<Long> = emptyList()): SavingsGoal? {
     val candidates = goals.filter { it.status == SavingsGoalStatus.ACTIVE && it.id !in excluding }
     return candidates.firstOrNull { it.pinned }
-        ?: candidates.minWithOrNull(compareBy<SavingsGoal> { it.createdAt }.thenBy { it.id })
+        ?: candidates.minWithOrNull(userOrder)
 }

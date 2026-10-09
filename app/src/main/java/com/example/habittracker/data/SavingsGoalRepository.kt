@@ -11,6 +11,8 @@ interface SavingsGoalRepository {
     suspend fun upsertSavingsGoal(goal: SavingsGoal)
     // Habits linked to the deleted goal become unassigned (and so pay into the pinned goal).
     suspend fun deleteSavingsGoal(id: Long)
+    // Saves the user's goal order: the goals' sortOrder becomes their position in orderedIds.
+    suspend fun setSavingsGoalOrder(orderedIds: List<Long>)
 
     suspend fun earnedOn(goalId: Long, date: LocalDate): BigDecimal
 

@@ -1,5 +1,6 @@
 package com.example.habittracker.model
 
+import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 import java.math.BigDecimal
@@ -17,7 +18,10 @@ data class SavingsGoal(
     val dailyEarningsCap: BigDecimal? = null,
     val status: SavingsGoalStatus = SavingsGoalStatus.ACTIVE,
     val createdAt: LocalDateTime = LocalDateTime.now(),
-    val pinned: Boolean = false
+    val pinned: Boolean = false,
+    // Position in the user's chosen order (Home carousel after the pinned goal, Goals screen "My order").
+    @ColumnInfo(defaultValue = "0")
+    val sortOrder: Int = 0
 )
 
 enum class SavingsGoalStatus {

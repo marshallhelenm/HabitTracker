@@ -14,6 +14,7 @@ class GoalListOrderTest {
         saved: String,
         createdDay: Int,
         pinned: Boolean = false,
+        order: Int = 0,
         status: SavingsGoalStatus = SavingsGoalStatus.ACTIVE
     ) = SavingsGoal(
         id = id,
@@ -22,21 +23,23 @@ class GoalListOrderTest {
         currentAmount = BigDecimal(saved),
         status = status,
         createdAt = LocalDateTime.of(2026, 1, createdDay, 9, 0),
-        pinned = pinned
+        pinned = pinned,
+        sortOrder = order
     )
 
-    private val trip = goal(1, "trip", saved = "10", createdDay = 2)
+    private val trip = goal(1, "trip", saved = "10", createdDay = 2, order = 3)
     private val bike = goal(2, "Bike", saved = "90", createdDay = 5, status = SavingsGoalStatus.COMPLETED)
     private val noodle = goal(3, "Danger Noodle", saved = "20", createdDay = 9, pinned = true)
     private val laptop = goal(4, "Laptop", saved = "100", createdDay = 1, status = SavingsGoalStatus.ARCHIVED)
-    private val amp = goal(5, "Amp", saved = "60", createdDay = 4)
+    private val amp = goal(5, "Amp", saved = "60", createdDay = 4, order = 1)
     private val all = listOf(trip, bike, noodle, laptop, amp)
 
     private fun ids(sort: GoalSort, hide: Boolean = false) = goalsForList(all, sort, hide).map { it.id }
 
     @Test
-    fun pinnedFirst_thenOldest_withCompletedThenArchivedAtBottom() {
-        assertEquals(listOf(3L, 1L, 5L, 2L, 4L), ids(GoalSort.PINNED_FIRST))
+    fun myOrder_pinnedFirst_thenUserOrder_withCompletedThenArchivedAtBottom() {
+        // Amp was created after trip but the user moved it ahead.
+        assertEquals(listOf(3L, 5L, 1L, 2L, 4L), ids(GoalSort.MY_ORDER))
     }
 
     @Test
@@ -65,11 +68,11 @@ class GoalListOrderTest {
         assertEquals(GoalSort.NAME, GoalSort.NAME_DESCENDING.reversed)
         assertEquals(GoalSort.PROGRESS_ASCENDING, GoalSort.PROGRESS.reversed)
         assertEquals(GoalSort.PROGRESS, GoalSort.PROGRESS_ASCENDING.reversed)
-        assertEquals(null, GoalSort.PINNED_FIRST.reversed)
+        assertEquals(null, GoalSort.MY_ORDER.reversed)
     }
 
     @Test
     fun hideCompleted_leavesOutCompletedAndArchived() {
-        assertEquals(listOf(3L, 1L, 5L), ids(GoalSort.PINNED_FIRST, hide = true))
+        assertEquals(listOf(3L, 5L, 1L), ids(GoalSort.MY_ORDER, hide = true))
     }
 }

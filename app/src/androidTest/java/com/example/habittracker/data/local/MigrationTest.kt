@@ -235,4 +235,37 @@ class MigrationTest {
             assertEquals(1, c.getInt(1))
         }
     }
+
+    @Test
+    fun migrate6To7_numbersGoalsOldestToNewest() {
+        helper.createDatabase(testDb, 6).apply {
+            execSQL(
+                """
+                INSERT INTO savings_goals (id, name, targetAmount, currentAmount, dueDate, dailyEarningsCap, status, createdAt, pinned)
+                VALUES
+                  (1, 'Newest', '100', '0', NULL, NULL, 'ACTIVE', '2026-09-20T10:00', 0),
+                  (2, 'Oldest', '100', '0', NULL, NULL, 'ACTIVE', '2026-09-01T10:00', 1),
+                  (3, 'Middle', '100', '5', NULL, '5', 'COMPLETED', '2026-09-10T10:00', 0),
+                  (4, 'Same time, higher id', '100', '0', NULL, NULL, 'ACTIVE', '2026-09-10T10:00', 0)
+                """.trimIndent()
+            )
+            close()
+        }
+
+        // Validates against 7.json, so a mismatch between the migration and the entity fails here.
+        val db = helper.runMigrationsAndValidate(testDb, 7, true, MIGRATION_6_7)
+
+        db.query("SELECT id, sortOrder FROM savings_goals ORDER BY id").use { c ->
+            val orders = buildList { while (c.moveToNext()) add(c.getLong(0) to c.getInt(1)) }
+            assertEquals(listOf(1L to 3, 2L to 0, 3L to 1, 4L to 2), orders)
+        }
+        db.query("SELECT name, currentAmount, dailyEarningsCap, status, pinned FROM savings_goals WHERE id = 3").use { c ->
+            assertTrue(c.moveToFirst())
+            assertEquals("Middle", c.getString(0))
+            assertEquals("5", c.getString(1))
+            assertEquals("5", c.getString(2))
+            assertEquals("COMPLETED", c.getString(3))
+            assertEquals(0, c.getInt(4))
+        }
+    }
 }

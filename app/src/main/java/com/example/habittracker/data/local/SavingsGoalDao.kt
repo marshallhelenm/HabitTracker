@@ -20,6 +20,15 @@ interface SavingsGoalDao {
     @Query("DELETE FROM savings_goals WHERE id = :id")
     suspend fun deleteById(id: Long)
 
+    @Query("UPDATE savings_goals SET sortOrder = :sortOrder WHERE id = :id")
+    suspend fun setSortOrder(id: Long, sortOrder: Int)
+
+    // Numbers the goals 0, 1, 2… in the given order, in one transaction so the order is never half-saved.
+    @Transaction
+    suspend fun setOrder(orderedIds: List<Long>) {
+        orderedIds.forEachIndexed { index, id -> setSortOrder(id, index) }
+    }
+
     @Query("UPDATE habits SET goalId = NULL WHERE goalId = :goalId")
     suspend fun unassignHabitsFromGoal(goalId: Long)
 

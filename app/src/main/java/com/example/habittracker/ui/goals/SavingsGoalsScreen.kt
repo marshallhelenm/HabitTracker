@@ -12,8 +12,10 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.DragIndicator
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Edit
@@ -51,6 +53,9 @@ import com.example.habittracker.ui.components.piggyFilterChipColors
 import com.example.habittracker.ui.home.habitsForGoalPage
 import com.example.habittracker.ui.formatMoney
 import com.example.habittracker.viewmodel.SavingsGoalViewModel
+import com.example.habittracker.viewmodel.nextPinnedGoal
+import sh.calvin.reorderable.ReorderableItem
+import sh.calvin.reorderable.rememberReorderableLazyListState
 
 @Composable
 fun SavingsGoalsScreen(
@@ -68,9 +73,27 @@ fun SavingsGoalsScreen(
     var inputError by rememberSaveable { mutableStateOf<String?>(null) }
     // Collapsed by default so the goal list gets the screen, matching the Habits screen.
     var formOpen by rememberSaveable { mutableStateOf(false) }
-    var sort by rememberSaveable { mutableStateOf(GoalSort.PINNED_FIRST) }
+    var sort by rememberSaveable { mutableStateOf(GoalSort.MY_ORDER) }
     var hideFinished by rememberSaveable { mutableStateOf(false) }
     val listedGoals = goalsForList(goals, sort, hideFinished)
+    // In "My order", active goals other than the pinned one can be dragged among themselves; the pinned
+    // goal always leads the carousel and finished goals aren't on it.
+    val draggableIds = if (sort == GoalSort.MY_ORDER) {
+        listedGoals.filter { it.status == SavingsGoalStatus.ACTIVE && !it.pinned }.map { it.id }.toSet()
+    } else {
+        emptySet()
+    }
+    // The list as shown, rearranged live while dragging. It's saved on drop, and resets to the stored
+    // order whenever goals reload.
+    var displayedGoals by remember(listedGoals) { mutableStateOf(listedGoals) }
+    val lazyListState = rememberLazyListState()
+    val reorderState = rememberReorderableLazyListState(lazyListState) { from, to ->
+        if (from.key in draggableIds && to.key in draggableIds) {
+            displayedGoals = displayedGoals.toMutableList().apply {
+                add(indexOfFirst { it.id == to.key }, removeAt(indexOfFirst { it.id == from.key }))
+            }
+        }
+    }
 
     Column(
         modifier = modifier
@@ -164,6 +187,7 @@ fun SavingsGoalsScreen(
         }
 
         LazyColumn(
+            state = lazyListState,
             modifier = Modifier.fillMaxSize(),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
@@ -186,106 +210,122 @@ fun SavingsGoalsScreen(
                     )
                 }
             }
-            items(listedGoals, key = { it.id }) { goal ->
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = MaterialTheme.shapes.medium,
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceVariant,
-                        contentColor = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(start = 16.dp, end = 4.dp, top = 8.dp, bottom = 16.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
+            items(displayedGoals, key = { it.id }) { goal ->
+                ReorderableItem(reorderState, key = goal.id, enabled = goal.id in draggableIds) { isDragging ->
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = MaterialTheme.shapes.medium,
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                            contentColor = MaterialTheme.colorScheme.onSurfaceVariant
+                        ),
+                        elevation = CardDefaults.cardElevation(defaultElevation = if (isDragging) 8.dp else 0.dp)
                     ) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(start = 16.dp, end = 4.dp, top = 8.dp, bottom = 16.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            Text(
-                                text = goal.name,
-                                style = MaterialTheme.typography.titleMedium,
-                                color = MaterialTheme.colorScheme.onSurface,
-                                modifier = Modifier.weight(1f)
-                            )
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                if (goal.id in draggableIds) {
+                                    Icon(
+                                        imageVector = Icons.Filled.DragIndicator,
+                                        contentDescription = "Drag to reorder",
+                                        tint = MaterialTheme.colorScheme.outline,
+                                        modifier = Modifier
+                                            .draggableHandle(onDragStopped = {
+                                                viewModel.reorderGoals(displayedGoals.map { it.id }.filter { it in draggableIds })
+                                            })
+                                            .padding(end = 8.dp)
+                                            .size(24.dp)
+                                    )
+                                }
+                                Text(
+                                    text = goal.name,
+                                    style = MaterialTheme.typography.titleMedium,
+                                    color = MaterialTheme.colorScheme.onSurface,
+                                    modifier = Modifier.weight(1f)
+                                )
 
-                            if (goal.pinned) {
-                                Surface(
-                                    shape = CircleShape,
-                                    color = MaterialTheme.colorScheme.primary,
-                                    contentColor = MaterialTheme.colorScheme.onPrimary
-                                ) {
-                                    Text(
-                                        text = "Pinned",
-                                        style = MaterialTheme.typography.labelSmall,
-                                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 3.dp)
+                                if (goal.pinned) {
+                                    Surface(
+                                        shape = CircleShape,
+                                        color = MaterialTheme.colorScheme.primary,
+                                        contentColor = MaterialTheme.colorScheme.onPrimary
+                                    ) {
+                                        Text(
+                                            text = "Pinned",
+                                            style = MaterialTheme.typography.labelSmall,
+                                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 3.dp)
+                                        )
+                                    }
+                                }
+
+                                IconButton(onClick = { onEditGoal(goal.id) }) {
+                                    Icon(
+                                        imageVector = Icons.Filled.Edit,
+                                        contentDescription = "Edit goal",
+                                        tint = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                }
+                                // Only active goals can be pinned; completed ones no longer take earnings.
+                                if (goal.status == SavingsGoalStatus.ACTIVE) IconButton(onClick = { viewModel.pinSavingsGoal(goal.id) }) {
+                                    Icon(
+                                        imageVector = Icons.Filled.PushPin,
+                                        contentDescription = "Pin goal",
+                                        tint = if (goal.pinned) {
+                                            MaterialTheme.colorScheme.primary
+                                        } else {
+                                            MaterialTheme.colorScheme.outline
+                                        },
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                }
+                                IconButton(onClick = {
+                                    if (habitsForGoalPage(habits, goal, goalIds).isEmpty()) {
+                                        viewModel.deleteSavingsGoal(goal.id, onDeleted = onGoalDeleted)
+                                    } else {
+                                        goalPendingDelete = goal
+                                    }
+                                }) {
+                                    Icon(
+                                        imageVector = Icons.Filled.Delete,
+                                        contentDescription = "Delete goal",
+                                        tint = MaterialTheme.colorScheme.outline,
+                                        modifier = Modifier.size(20.dp)
                                     )
                                 }
                             }
 
-                            IconButton(onClick = { onEditGoal(goal.id) }) {
-                                Icon(
-                                    imageVector = Icons.Filled.Edit,
-                                    contentDescription = "Edit goal",
-                                    tint = MaterialTheme.colorScheme.primary,
-                                    modifier = Modifier.size(20.dp)
-                                )
-                            }
-                            // Only active goals can be pinned; completed ones no longer take earnings.
-                            if (goal.status == SavingsGoalStatus.ACTIVE) IconButton(onClick = { viewModel.pinSavingsGoal(goal.id) }) {
-                                Icon(
-                                    imageVector = Icons.Filled.PushPin,
-                                    contentDescription = "Pin goal",
-                                    tint = if (goal.pinned) {
-                                        MaterialTheme.colorScheme.primary
-                                    } else {
-                                        MaterialTheme.colorScheme.outline
-                                    },
-                                    modifier = Modifier.size(20.dp)
-                                )
-                            }
-                            IconButton(onClick = {
-                                if (habitsForGoalPage(habits, goal, goalIds).isEmpty()) {
-                                    viewModel.deleteSavingsGoal(goal.id, onDeleted = onGoalDeleted)
-                                } else {
-                                    goalPendingDelete = goal
-                                }
-                            }) {
-                                Icon(
-                                    imageVector = Icons.Filled.Delete,
-                                    contentDescription = "Delete goal",
-                                    tint = MaterialTheme.colorScheme.outline,
-                                    modifier = Modifier.size(20.dp)
-                                )
-                            }
-                        }
-
-                        Column(
-                            modifier = Modifier.padding(end = 12.dp),
-                            verticalArrangement = Arrangement.spacedBy(6.dp)
-                        ) {
-                            GoalProgressBar(percentFilled = viewModel.percentCompleted(goal), height = 14.dp)
-                            Row(modifier = Modifier.fillMaxWidth()) {
-                                Text(
-                                    text = "${formatMoney(goal.currentAmount)} of ${formatMoney(goal.targetAmount)}",
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    modifier = Modifier.weight(1f)
-                                )
-                                if (goal.status == SavingsGoalStatus.ACTIVE) {
-                                    val habitCount = habitsForGoalPage(habits, goal, goalIds).size
+                            Column(
+                                modifier = Modifier.padding(end = 12.dp),
+                                verticalArrangement = Arrangement.spacedBy(6.dp)
+                            ) {
+                                GoalProgressBar(percentFilled = viewModel.percentCompleted(goal), height = 14.dp)
+                                Row(modifier = Modifier.fillMaxWidth()) {
                                     Text(
-                                        text = if (habitCount == 1) "1 habit · " else "$habitCount habits · ",
+                                        text = "${formatMoney(goal.currentAmount)} of ${formatMoney(goal.targetAmount)}",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        modifier = Modifier.weight(1f)
+                                    )
+                                    if (goal.status == SavingsGoalStatus.ACTIVE) {
+                                        val habitCount = habitsForGoalPage(habits, goal, goalIds).size
+                                        Text(
+                                            text = if (habitCount == 1) "1 habit · " else "$habitCount habits · ",
+                                            style = MaterialTheme.typography.labelMedium
+                                        )
+                                    }
+                                    Text(
+                                        text = goal.status.name.lowercase().replaceFirstChar { it.uppercase() } +
+                                            if (goal.status == SavingsGoalStatus.COMPLETED) " 🎉" else "",
                                         style = MaterialTheme.typography.labelMedium
                                     )
                                 }
-                                Text(
-                                    text = goal.status.name.lowercase().replaceFirstChar { it.uppercase() } +
-                                        if (goal.status == SavingsGoalStatus.COMPLETED) " 🎉" else "",
-                                    style = MaterialTheme.typography.labelMedium
-                                )
                             }
                         }
                     }
@@ -296,9 +336,7 @@ fun SavingsGoalsScreen(
 
     goalPendingDelete?.let { goal ->
         val affected = habitsForGoalPage(habits, goal, goalIds).size
-        val nextPinned = goals
-            .filter { it.id != goal.id }
-            .minWithOrNull(compareBy<SavingsGoal> { it.createdAt }.thenBy { it.id })
+        val nextPinned = nextPinnedGoal(goals, excluding = listOf(goal.id))
         val habitsPhrase = if (affected == 1) "1 habit" else "$affected habits"
         val destination = when {
             !goal.pinned -> "your pinned goal"
@@ -366,7 +404,7 @@ private fun GoalListControls(
             Text(text = "Sort", style = MaterialTheme.typography.labelLarge)
             // Each chip covers a sort and its reverse (A–Z / Z–A, Progress ↓ / ↑):
             // tapping the selected chip again flips the direction.
-            listOf(GoalSort.PINNED_FIRST, GoalSort.NAME, GoalSort.PROGRESS).forEach { chipSort ->
+            listOf(GoalSort.MY_ORDER, GoalSort.NAME, GoalSort.PROGRESS).forEach { chipSort ->
                 val selected = sort == chipSort || sort == chipSort.reversed
                 FilterChip(
                     selected = selected,

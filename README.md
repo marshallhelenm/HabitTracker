@@ -6,16 +6,16 @@ Built with Kotlin, Jetpack Compose (Material 3) and Room.
 
 ## Features
 
-- **Habits:** create, edit, track or untrack, and check off habits once a day. Streaks continue when a habit was done yesterday and restart otherwise. A habit checked by mistake can be un-checked the same day, which restores its streak and takes back the money it earned.
+- **Habits:** create, edit, track or untrack, and check off habits once a day. A habit is daily or custom ("at least once every N days"); its streak continues as long as it's done within that window and restarts otherwise. Custom habits show when they're next due. A habit checked by mistake can be un-checked the same day, which restores its streak and takes back the money it earned.
 - **Savings goals:** several goals at once, each with a target and an optional daily earnings cap. One goal is always **pinned**.
-- **Home carousel:** swipe, or tap the arrows, between active goals with the pinned goal first. The habit list below follows whichever goal is on screen.
-- **Goals screen:** sort by pinned first, A–Z or progress (tap A–Z or Progress again to reverse it), and hide completed goals.
+- **Home carousel:** swipe, or tap the arrows, between active goals: the pinned goal first, then the rest in your order. The habit list below follows whichever goal is on screen.
+- **Goals screen:** sort by your order, A–Z or progress (tap A–Z or Progress again to reverse it), and hide completed goals. In "My order", drag goals by their handles to set the carousel order.
 
 ## How the money works
 
 - A habit pays into its assigned goal. Unassigned habits, and habits whose goal is completed or gone, pay into the pinned goal.
 - A goal's **daily cap** limits the total it can receive per day across all habits. Once it's hit, completions still count toward streaks but earn nothing.
-- A goal fills exactly to its target and is marked **Completed**. Anything extra overflows to the pinned goal, within that goal's own cap. If the pinned goal is the one completing, the pin moves to the oldest active goal.
+- A goal fills exactly to its target and is marked **Completed**. Anything extra overflows to the pinned goal, within that goal's own cap. If the pinned goal is the one completing, the pin moves to the first active goal in your order.
 - Every deposit is logged, which is what makes the daily cap and un-checking possible.
 
 The rules live in `viewmodel/EarningsPlanner.kt` (a pure function, `planEarnings`) and are applied in `SavingsGoalViewModel.recordEarningsForHabitCompletion`.

@@ -14,7 +14,7 @@ class EarningsPlannerTest {
         saved: String = "0",
         cap: String? = null,
         pinned: Boolean = false,
-        createdDay: Int = id.toInt(),
+        order: Int = id.toInt(),
         status: SavingsGoalStatus = SavingsGoalStatus.ACTIVE
     ) = SavingsGoal(
         id = id,
@@ -23,8 +23,9 @@ class EarningsPlannerTest {
         currentAmount = BigDecimal(saved),
         dailyEarningsCap = cap?.let(::BigDecimal),
         status = status,
-        createdAt = LocalDateTime.of(2026, 1, createdDay, 9, 0),
-        pinned = pinned
+        createdAt = LocalDateTime.of(2026, 1, 1, 9, 0),
+        pinned = pinned,
+        sortOrder = order
     )
 
     private fun amt(v: String) = BigDecimal(v)
@@ -89,11 +90,11 @@ class EarningsPlannerTest {
     }
 
     @Test
-    fun pinnedGoalFilling_overflowsToOldestRemainingActiveGoal() {
+    fun pinnedGoalFilling_overflowsToFirstRemainingActiveGoalInOrder() {
         val pinned = goal(1, target = "50", saved = "48", pinned = true)
-        val newer = goal(3, createdDay = 9)
-        val older = goal(2, createdDay = 4)
-        val p = plan("6", pinned, listOf(pinned, newer, older))
+        val later = goal(3, order = 9)
+        val earlier = goal(2, order = 4)
+        val p = plan("6", pinned, listOf(pinned, later, earlier))
         assertEquals(
             listOf(PlannedDeposit(1, amt("2"), null), PlannedDeposit(2, amt("4"), 1L)),
             p.deposits

@@ -29,6 +29,10 @@ class FakeSavingsGoalRepository(
         deposits.removeAll { it.goalId == id }
     }
 
+    override suspend fun setSavingsGoalOrder(orderedIds: List<Long>) {
+        orderedIds.forEachIndexed { index, id -> goals[id]?.let { goals[id] = it.copy(sortOrder = index) } }
+    }
+
     override suspend fun earnedOn(goalId: Long, date: LocalDate): BigDecimal =
         deposits.filter { it.goalId == goalId && it.depositedOn == date }
             .fold(BigDecimal.ZERO) { sum, d -> sum + d.amount }

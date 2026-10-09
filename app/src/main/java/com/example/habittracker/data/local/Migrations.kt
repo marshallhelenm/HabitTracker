@@ -70,3 +70,17 @@ val MIGRATION_5_6 = object : Migration(5, 6) {
         db.execSQL("CREATE INDEX IF NOT EXISTS `index_habits_goalId` ON `habits` (`goalId`)")
     }
 }
+
+// Adds the user's goal order. Existing goals are numbered oldest to newest, matching the carousel
+// order they had before.
+val MIGRATION_6_7 = object : Migration(6, 7) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE `savings_goals` ADD COLUMN `sortOrder` INTEGER NOT NULL DEFAULT 0")
+        db.execSQL(
+            "UPDATE `savings_goals` SET `sortOrder` = (" +
+                "SELECT COUNT(*) FROM `savings_goals` AS `older` " +
+                "WHERE `older`.`createdAt` < `savings_goals`.`createdAt` " +
+                "OR (`older`.`createdAt` = `savings_goals`.`createdAt` AND `older`.`id` < `savings_goals`.`id`))"
+        )
+    }
+}

@@ -41,7 +41,8 @@ class SavingsGoalViewModelTest {
         cap: String? = null,
         target: String = "100",
         saved: String = "0",
-        status: SavingsGoalStatus = SavingsGoalStatus.ACTIVE
+        status: SavingsGoalStatus = SavingsGoalStatus.ACTIVE,
+        order: Int = 0
     ) = SavingsGoal(
         id = id,
         name = "Goal $id",
@@ -50,7 +51,8 @@ class SavingsGoalViewModelTest {
         dailyEarningsCap = cap?.let(::BigDecimal),
         status = status,
         createdAt = LocalDateTime.of(2026, 1, createdDay, 9, 0),
-        pinned = pinned
+        pinned = pinned,
+        sortOrder = order
     )
 
     private fun habit(goalId: Long?, streak: Int, id: Long = 1) = Habit(id = id, title = "Habit $id", currentStreak = streak, goalId = goalId)
@@ -137,9 +139,9 @@ class SavingsGoalViewModelTest {
     }
 
     @Test
-    fun deletingPinnedGoal_pinsOldestRemainingGoal() = runTest(dispatcher) {
+    fun deletingPinnedGoal_pinsFirstRemainingGoalInOrder() = runTest(dispatcher) {
         val repo = FakeSavingsGoalRepository(
-            listOf(goal(1, pinned = true, createdDay = 1), goal(2, createdDay = 9), goal(3, createdDay = 4))
+            listOf(goal(1, pinned = true, order = 1), goal(2, order = 9), goal(3, order = 4))
         )
         val vm = viewModelWith(repo)
 
@@ -152,8 +154,8 @@ class SavingsGoalViewModelTest {
     }
 
     @Test
-    fun loadingGoalsWithNonePinned_pinsOldest() = runTest(dispatcher) {
-        val repo = FakeSavingsGoalRepository(listOf(goal(1, createdDay = 5), goal(2, createdDay = 2)))
+    fun loadingGoalsWithNonePinned_pinsFirstInOrder() = runTest(dispatcher) {
+        val repo = FakeSavingsGoalRepository(listOf(goal(1, order = 5), goal(2, order = 2)))
         viewModelWith(repo)
 
         assertTrue(repo.getSavingsGoalById(2)!!.pinned)
@@ -210,9 +212,9 @@ class SavingsGoalViewModelTest {
     }
 
     @Test
-    fun pinnedGoalCompleting_movesPinToOldestActiveGoal() = runTest(dispatcher) {
+    fun pinnedGoalCompleting_movesPinToFirstActiveGoalInOrder() = runTest(dispatcher) {
         val repo = FakeSavingsGoalRepository(
-            listOf(goal(1, pinned = true, target = "10", saved = "9"), goal(2, createdDay = 8), goal(3, createdDay = 3))
+            listOf(goal(1, pinned = true, target = "10", saved = "9"), goal(2, order = 8), goal(3, order = 3))
         )
         val vm = viewModelWith(repo)
 
@@ -242,7 +244,7 @@ class SavingsGoalViewModelTest {
     @Test
     fun loadingGoalAlreadyPastTarget_completesIt_keepsAmount_andMovesPin() = runTest(dispatcher) {
         val repo = FakeSavingsGoalRepository(
-            listOf(goal(1, pinned = true, target = "150", saved = "162"), goal(2, createdDay = 2))
+            listOf(goal(1, pinned = true, target = "150", saved = "162"), goal(2, order = 2))
         )
         viewModelWith(repo)
 
@@ -277,9 +279,9 @@ class SavingsGoalViewModelTest {
     fun completedGoalsCannotBePinned_andDoNotAppearInCarousel() = runTest(dispatcher) {
         val repo = FakeSavingsGoalRepository(
             listOf(
-                goal(1, createdDay = 1, target = "10", saved = "10", status = SavingsGoalStatus.COMPLETED),
-                goal(2, createdDay = 5, pinned = true),
-                goal(3, createdDay = 3)
+                goal(1, order = 1, target = "10", saved = "10", status = SavingsGoalStatus.COMPLETED),
+                goal(2, order = 5, pinned = true),
+                goal(3, order = 3)
             )
         )
         val vm = viewModelWith(repo)
@@ -403,5 +405,66 @@ class SavingsGoalViewModelTest {
         advanceUntilIdle()
 
         assertEquals(BigDecimal("4"), repo.amountOf(1))
+    }
+
+    @Test
+    fun carousel_showsPinnedFirst_thenActiveGoalsInUserOrder() = runTest(dispatcher) {
+        val repo = FakeSavingsGoalRepository(
+            listOf(
+                goal(1, order = 2),
+                goal(2, pinned = true, order = 3),
+                goal(3, order = 0),
+                goal(4, order = 1, status = SavingsGoalStatus.COMPLETED)
+            )
+        )
+        val vm = viewModelWith(repo)
+
+        assertEquals(listOf(2L, 3L, 1L), vm.carouselGoals.value.map { it.id })
+    }
+
+    @Test
+    fun reorderGoals_savesNewOrder_andLeavesOtherGoalsInTheirSlots() = runTest(dispatcher) {
+        val repo = FakeSavingsGoalRepository(
+            listOf(goal(1, pinned = true, order = 0), goal(2, order = 1), goal(3, order = 2), goal(4, order = 3))
+        )
+        val vm = viewModelWith(repo)
+
+        // Drag goal 4 to the top of the draggable goals (everything but the pinned one).
+        vm.reorderGoals(listOf(4L, 2L, 3L))
+        advanceUntilIdle()
+
+        assertEquals(listOf(1L, 4L, 2L, 3L), vm.carouselGoals.value.map { it.id })
+        // Unpinning goal 1 later puts it back in first place, since its slot was kept.
+        assertEquals(0, repo.getSavingsGoalById(1)!!.sortOrder)
+    }
+
+    @Test
+    fun newGoal_goesToTheEndOfTheOrder() = runTest(dispatcher) {
+        val repo = FakeSavingsGoalRepository(listOf(goal(1, pinned = true, order = 4), goal(2, order = 7)))
+        val vm = viewModelWith(repo)
+
+        assertTrue(vm.addSavingsGoal("Amp", "50"))
+        advanceUntilIdle()
+
+        assertEquals(listOf(1L, 2L, 3L), vm.carouselGoals.value.map { it.id })
+        assertEquals(8, repo.getSavingsGoalById(3)!!.sortOrder)
+    }
+
+    @Test
+    fun whenNoGoalIsPinned_thePinFallsToTheFirstGoalInUserOrder() = runTest(dispatcher) {
+        // Goal 1 is older, but the user put goal 2 first.
+        val repo = FakeSavingsGoalRepository(listOf(goal(1, createdDay = 1, order = 1), goal(2, createdDay = 5, order = 0)))
+        viewModelWith(repo)
+
+        assertTrue(repo.getSavingsGoalById(2)!!.pinned)
+        assertFalse(repo.getSavingsGoalById(1)!!.pinned)
+    }
+
+    @Test
+    fun orderWithMoved_handlesTiedPositionsFromBeforeReordering() {
+        // Goals that all share sortOrder 0 fall back to id order before being renumbered.
+        val goals = listOf(goal(3), goal(1), goal(2))
+        assertEquals(listOf(2L, 1L, 3L), orderWithMoved(goals, listOf(2L, 1L, 3L)))
+        assertEquals(listOf(1L, 3L, 2L), orderWithMoved(goals, listOf(3L, 2L)))
     }
 }

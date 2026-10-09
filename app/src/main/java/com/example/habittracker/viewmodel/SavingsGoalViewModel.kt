@@ -55,8 +55,7 @@ class SavingsGoalViewModel(
         .map { goals -> goals.firstOrNull { it.pinned } }
         .stateIn(viewModelScope, SharingStarted.Eagerly, null)
 
-    // Home carousel order: pinned first, then other active goals oldest to newest, then completed goals.
-    // Archived goals stay off Home.
+    // Home carousel: the pinned goal first, then the other active goals in the user's order.
     val carouselGoals: StateFlow<List<SavingsGoal>> = _savingsGoals
         .map { goals ->
             goals
@@ -64,8 +63,7 @@ class SavingsGoalViewModel(
                 .sortedWith(
                     compareBy<SavingsGoal> { it.status != SavingsGoalStatus.ACTIVE }
                         .thenByDescending { it.pinned }
-                        .thenBy { it.createdAt }
-                        .thenBy { it.id }
+                        .then(userOrder)
                 )
         }
         .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
@@ -101,10 +99,13 @@ class SavingsGoalViewModel(
 
         viewModelScope.launch {
             withContext(ioDispatcher) {
+                // New goals go to the end of the user's order.
+                val nextPosition = (repository.getSavingsGoals().maxOfOrNull { it.sortOrder } ?: -1) + 1
                 repository.upsertSavingsGoal(
                     SavingsGoal(
                         name = normalizedName,
-                        targetAmount = targetAmount
+                        targetAmount = targetAmount,
+                        sortOrder = nextPosition
                     )
                 )
             }
@@ -121,6 +122,17 @@ class SavingsGoalViewModel(
             }
             refresh()
             onDeleted()
+        }
+    }
+
+    // movedIds is a run of goals in their new order (e.g. the draggable goals on the Goals screen). They
+    // swap among the positions they already held, so every other goal keeps its place.
+    fun reorderGoals(movedIds: List<Long>) {
+        viewModelScope.launch {
+            withContext(ioDispatcher) {
+                repository.setSavingsGoalOrder(orderWithMoved(repository.getSavingsGoals(), movedIds))
+            }
+            refresh()
         }
     }
 
@@ -293,7 +305,7 @@ class SavingsGoalViewModel(
     // Keeps stored goals consistent with the money rules:
     //  - an active goal at or past its target is completed (covers data saved before completion existed);
     //  - only active goals may be pinned, and whenever an active goal exists exactly one is pinned,
-    //    since unassigned habits pay into it. The pin falls to the oldest active goal.
+    //    since unassigned habits pay into it. The pin falls to the first active goal in the user's order.
     private suspend fun normalizeGoals() {
         val goals = repository.getSavingsGoals().map { goal ->
             if (goal.status == SavingsGoalStatus.ACTIVE && goal.currentAmount >= goal.targetAmount) {
@@ -307,8 +319,7 @@ class SavingsGoalViewModel(
         }
         val active = goals.filter { it.status == SavingsGoalStatus.ACTIVE }
         if (active.isNotEmpty() && active.none { it.pinned }) {
-            val oldest = active.minWith(compareBy<SavingsGoal> { it.createdAt }.thenBy { it.id })
-            repository.upsertSavingsGoal(oldest.copy(pinned = true))
+            repository.upsertSavingsGoal(nextPinnedGoal(active)!!.copy(pinned = true))
         }
     }
 
@@ -332,4 +343,16 @@ class SavingsGoalViewModel(
             }
         }
     }
+}
+
+// The user's goal order, with id as a tiebreak for goals that share a position.
+val userOrder: Comparator<SavingsGoal> = compareBy<SavingsGoal> { it.sortOrder }.thenBy { it.id }
+
+// Every goal's id in the user's order after moving movedIds into the given order. The moved goals
+// fill the slots they already occupied, so the goals around them don't shift.
+fun orderWithMoved(goals: List<SavingsGoal>, movedIds: List<Long>): List<Long> {
+    val current = goals.sortedWith(userOrder).map { it.id }
+    val moved = movedIds.filter { it in current }.distinct().iterator()
+    val movedSet = movedIds.toSet()
+    return current.map { id -> if (id in movedSet && moved.hasNext()) moved.next() else id }
 }

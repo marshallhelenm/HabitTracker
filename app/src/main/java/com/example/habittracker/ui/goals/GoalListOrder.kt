@@ -2,9 +2,11 @@ package com.example.habittracker.ui.goals
 
 import com.example.habittracker.model.SavingsGoal
 import com.example.habittracker.model.SavingsGoalStatus
+import com.example.habittracker.viewmodel.userOrder
 
 enum class GoalSort(val label: String) {
-    PINNED_FIRST("Pinned first"),
+    // The Home carousel's order: pinned goal, then the order the user dragged goals into.
+    MY_ORDER("My order"),
     NAME("A–Z"),
     NAME_DESCENDING("Z–A"),
     // Direction is shown with an icon on the chip rather than in the text.
@@ -18,7 +20,7 @@ enum class GoalSort(val label: String) {
             NAME_DESCENDING -> NAME
             PROGRESS -> PROGRESS_ASCENDING
             PROGRESS_ASCENDING -> PROGRESS
-            PINNED_FIRST -> null
+            MY_ORDER -> null
         }
 }
 
@@ -26,7 +28,7 @@ enum class GoalSort(val label: String) {
 // within each group. With hideFinished, completed and archived goals are left out.
 fun goalsForList(goals: List<SavingsGoal>, sort: GoalSort, hideFinished: Boolean): List<SavingsGoal> {
     val withinGroup = when (sort) {
-        GoalSort.PINNED_FIRST -> compareByDescending<SavingsGoal> { it.pinned }.thenBy { it.createdAt }
+        GoalSort.MY_ORDER -> compareByDescending<SavingsGoal> { it.pinned }.then(userOrder)
         GoalSort.NAME -> compareBy(String.CASE_INSENSITIVE_ORDER) { it.name }
         GoalSort.NAME_DESCENDING -> compareBy(String.CASE_INSENSITIVE_ORDER.reversed()) { it.name }
         GoalSort.PROGRESS -> compareByDescending { it.progress() }

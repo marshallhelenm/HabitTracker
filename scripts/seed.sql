@@ -1,8 +1,8 @@
--- Test seed data for Habit Piggy (Room schema version 6).
+-- Test seed data for Habit Piggy (Room schema version 7).
 -- Dates are relative to today so "done today" / "streak alive" states stay valid whenever this runs.
 -- Covers: several goals at different fill levels (0%, ~1%, partial, ~full, over 100%), a long goal name,
 -- an archived goal (hidden from Home), assigned / unassigned / untracked habits, completed-today habits,
--- streaks that are alive vs broken, custom-interval habits (every 7 and 3 days), and a habit with a description.
+-- streaks that are alive vs broken, custom-interval habits (every 7 and 3 days), a goal order that differs from creation order, and a habit with a description.
 -- Money-rule scenarios (completing a habit today):
 --   * "Bike to work" ($4) fills New Bike ($297 of $300) and overflows $1 to the pinned Danger Noodle.
 --   * Danger Noodle has a $5 daily cap with $3 already deposited today, so "Read 20 pages" ($13) hits the cap.
@@ -13,14 +13,15 @@ DELETE FROM habits;
 DELETE FROM savings_goals;
 DELETE FROM sqlite_sequence WHERE name IN ('habits', 'savings_goals', 'deposits');
 
--- id, name, targetAmount, currentAmount, dueDate, dailyEarningsCap, status, createdAt, pinned
-INSERT INTO savings_goals (id, name, targetAmount, currentAmount, dueDate, dailyEarningsCap, status, createdAt, pinned) VALUES
-  (1, 'Danger Noodle', '2000', '412.50', NULL, '5', 'ACTIVE', strftime('%Y-%m-%dT%H:%M:%S', 'now', 'localtime', '-128 days'), 1),
-  (2, 'New Bike', '300', '297', NULL, NULL, 'ACTIVE', strftime('%Y-%m-%dT%H:%M:%S', 'now', 'localtime', '-84 days'), 0),
-  (3, 'Concert Tickets', '150', '162', NULL, '3', 'ACTIVE', strftime('%Y-%m-%dT%H:%M:%S', 'now', 'localtime', '-60 days'), 0),
-  (4, 'Weekend Trip', '900', '0', NULL, NULL, 'ACTIVE', strftime('%Y-%m-%dT%H:%M:%S', 'now', 'localtime', '-17 days'), 0),
-  (5, 'Emergency fund for vet visits and other surprises', '1000', '9', NULL, '2', 'ACTIVE', strftime('%Y-%m-%dT%H:%M:%S', 'now', 'localtime', '-5 days'), 0),
-  (6, 'Old Laptop Fund', '800', '800', NULL, NULL, 'ARCHIVED', strftime('%Y-%m-%dT%H:%M:%S', 'now', 'localtime', '-300 days'), 0);
+-- id, name, targetAmount, currentAmount, dueDate, dailyEarningsCap, status, createdAt, pinned, sortOrder
+-- The emergency fund is newest but was moved up to sit right after the pinned goal.
+INSERT INTO savings_goals (id, name, targetAmount, currentAmount, dueDate, dailyEarningsCap, status, createdAt, pinned, sortOrder) VALUES
+  (1, 'Danger Noodle', '2000', '412.50', NULL, '5', 'ACTIVE', strftime('%Y-%m-%dT%H:%M:%S', 'now', 'localtime', '-128 days'), 1, 0),
+  (2, 'New Bike', '300', '297', NULL, NULL, 'ACTIVE', strftime('%Y-%m-%dT%H:%M:%S', 'now', 'localtime', '-84 days'), 0, 2),
+  (3, 'Concert Tickets', '150', '162', NULL, '3', 'ACTIVE', strftime('%Y-%m-%dT%H:%M:%S', 'now', 'localtime', '-60 days'), 0, 3),
+  (4, 'Weekend Trip', '900', '0', NULL, NULL, 'ACTIVE', strftime('%Y-%m-%dT%H:%M:%S', 'now', 'localtime', '-17 days'), 0, 4),
+  (5, 'Emergency fund for vet visits and other surprises', '1000', '9', NULL, '2', 'ACTIVE', strftime('%Y-%m-%dT%H:%M:%S', 'now', 'localtime', '-5 days'), 0, 1),
+  (6, 'Old Laptop Fund', '800', '800', NULL, NULL, 'ARCHIVED', strftime('%Y-%m-%dT%H:%M:%S', 'now', 'localtime', '-300 days'), 0, 5);
 
 -- id, title, description, intervalDays, currentStreak, longestStreak, createdAt, lastCompletedOn, tracking, goalId
 INSERT INTO habits (id, title, description, intervalDays, currentStreak, longestStreak, createdAt, lastCompletedOn, tracking, goalId) VALUES
