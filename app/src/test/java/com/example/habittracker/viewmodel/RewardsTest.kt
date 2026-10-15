@@ -8,13 +8,14 @@ import java.time.LocalDate
 
 class RewardsTest {
     private val today = LocalDate.of(2026, 10, 8)
-    private fun habit(streak: Int, last: LocalDate?, rate: String, interval: Int = 1) = Habit(
+    private fun habit(streak: Int, last: LocalDate?, rate: String, interval: Int = 1, fixed: Boolean = false) = Habit(
         id = 1,
         title = "Read",
         currentStreak = streak,
         lastCompletedOn = last,
         rewardRate = BigDecimal(rate),
-        intervalDays = interval
+        intervalDays = interval,
+        fixedReward = fixed
     )
 
     private fun assertMoney(expected: String, actual: BigDecimal) =
@@ -45,5 +46,18 @@ class RewardsTest {
     @Test
     fun nextPayout_forCustomInterval_countsWithinTheWindow() {
         assertMoney("6", nextPayout(habit(2, today.minusDays(3), "2", interval = 3), today))
+    }
+
+    @Test
+    fun fixedPayout_ignoresTheStreak() {
+        assertMoney("5", payoutFor(habit(0, null, "5", fixed = true), 1))
+        assertMoney("5", payoutFor(habit(0, null, "5", fixed = true), 30))
+    }
+
+    @Test
+    fun fixedNextPayout_isTheSameWhetherTheStreakIsAliveOrBroken() {
+        assertMoney("2", nextPayout(habit(9, today.minusDays(1), "2", fixed = true), today))
+        assertMoney("2", nextPayout(habit(9, today.minusDays(5), "2", fixed = true), today))
+        assertMoney("2", nextPayout(habit(9, today, "2", fixed = true), today))
     }
 }

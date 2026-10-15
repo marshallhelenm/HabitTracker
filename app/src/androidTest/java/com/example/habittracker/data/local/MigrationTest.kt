@@ -55,4 +55,28 @@ class MigrationTest {
             assertEquals("1", c.getString(12))
         }
     }
+
+    @Test
+    fun migrate2To3_keepsExistingHabitsGrowingWithAVisibleStreak() {
+        helper.createDatabase(testDb, 2).apply {
+            execSQL(
+                """
+                INSERT INTO habits (id, title, description, intervalDays, rewardRate, currentStreak, longestStreak, createdAt, lastCompletedOn, tracking, goalId, prevLastCompletedOn, prevCurrentStreak, prevLongestStreak)
+                VALUES (7, 'Stretch', '', 1, '1.25', 4, 9, '2026-09-01T08:30', '2026-10-06', 1, NULL, NULL, NULL, NULL)
+                """.trimIndent()
+            )
+            close()
+        }
+
+        val db = helper.runMigrationsAndValidate(testDb, 3, true, MIGRATION_2_3)
+
+        db.query("SELECT title, rewardRate, currentStreak, fixedReward, showStreak FROM habits WHERE id = 7").use { c ->
+            assertTrue(c.moveToFirst())
+            assertEquals("Stretch", c.getString(0))
+            assertEquals("1.25", c.getString(1))
+            assertEquals(4, c.getInt(2))
+            assertEquals(0, c.getInt(3))
+            assertEquals(1, c.getInt(4))
+        }
+    }
 }

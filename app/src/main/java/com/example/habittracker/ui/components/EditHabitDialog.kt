@@ -40,6 +40,9 @@ fun EditHabitDialog(
     val intervalDays = intervalDaysFrom(customFrequency, intervalText)
     var goalId by rememberSaveable(habit.id) { mutableStateOf(habit.goalId) }
     var rewardRate by rememberSaveable(habit.id) { mutableStateOf(habit.rewardRate) }
+    var fixedReward by rememberSaveable(habit.id) { mutableStateOf(habit.fixedReward) }
+    var showStreak by rememberSaveable(habit.id) { mutableStateOf(habit.showStreak) }
+    val streakShown = showStreak || !fixedReward
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -62,14 +65,24 @@ fun EditHabitDialog(
                     modifier = Modifier.fillMaxWidth()
                 )
 
-                FrequencyPicker(
-                    custom = customFrequency,
-                    onCustomChange = { customFrequency = it },
-                    daysText = intervalText,
-                    onDaysTextChange = { intervalText = it }
+                RewardTypePicker(
+                    fixed = fixedReward,
+                    onFixedChange = { fixedReward = it },
+                    showStreak = showStreak,
+                    onShowStreakChange = { showStreak = it }
                 )
 
-                RewardStepper(rate = rewardRate, onRateChange = { rewardRate = it })
+                RewardStepper(rate = rewardRate, onRateChange = { rewardRate = it }, fixed = fixedReward)
+
+                // Hidden without a streak; the habit keeps its interval for if the streak comes back.
+                if (streakShown) {
+                    FrequencyPicker(
+                        custom = customFrequency,
+                        onCustomChange = { customFrequency = it },
+                        daysText = intervalText,
+                        onDaysTextChange = { intervalText = it }
+                    )
+                }
 
                 GoalPicker(
                     goals = goals,
@@ -92,7 +105,7 @@ fun EditHabitDialog(
         },
         confirmButton = {
             Button(
-                enabled = title.isNotBlank() && intervalDays != null,
+                enabled = title.isNotBlank() && (!streakShown || intervalDays != null),
                 onClick = {
                     onSave(
                         habit.copy(
@@ -101,7 +114,9 @@ fun EditHabitDialog(
                             tracking = tracking,
                             intervalDays = intervalDays ?: habit.intervalDays,
                             goalId = goalId,
-                            rewardRate = rewardRate
+                            rewardRate = rewardRate,
+                            fixedReward = fixedReward,
+                            showStreak = streakShown
                         )
                     )
                 }

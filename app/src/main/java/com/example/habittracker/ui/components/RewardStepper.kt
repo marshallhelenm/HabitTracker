@@ -28,6 +28,7 @@ import java.math.BigDecimal
 fun RewardStepper(
     rate: BigDecimal,
     onRateChange: (BigDecimal) -> Unit,
+    fixed: Boolean = false,
     modifier: Modifier = Modifier
 ) {
     Row(
@@ -36,7 +37,7 @@ fun RewardStepper(
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         Text(
-            text = "Reward rate",
+            text = if (fixed) "Per check-in" else "Reward × streak",
             style = MaterialTheme.typography.labelLarge,
             modifier = Modifier.weight(1f)
         )

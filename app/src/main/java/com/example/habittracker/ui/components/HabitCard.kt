@@ -128,7 +128,7 @@ fun HabitCard(
             }
 
             val deadline = dueBy(habit, today)
-            if (habit.intervalDays > 1 && deadline != null && !completedToday) {
+            if (habit.showStreak && habit.intervalDays > 1 && deadline != null && !completedToday) {
                 Text(
                     text = dueLabel(deadline, today),
                     style = MaterialTheme.typography.labelMedium,
@@ -149,12 +149,16 @@ fun HabitCard(
                     horizontalArrangement = Arrangement.spacedBy(6.dp),
                     verticalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
-                    StreakChip(streak = effectiveStreak(habit, today), daily = habit.intervalDays == 1)
+                    if (habit.showStreak) {
+                        StreakChip(streak = effectiveStreak(habit, today), daily = habit.intervalDays == 1)
+                    }
                     RewardChip(
                         text = when {
+                            !showNextPayout && habit.fixedReward -> "${formatMoney(habit.rewardRate)} each time"
                             !showNextPayout -> "${formatMoney(habit.rewardRate)} × streak"
                             !completedToday -> "+${formatMoney(nextPayout(habit, today))}"
-                            habit.intervalDays == 1 -> "+${formatMoney(nextPayout(habit, today))} tomorrow"
+                            // Without a visible streak there's no interval to wait out; it can be done again tomorrow.
+                            habit.intervalDays == 1 || !habit.showStreak -> "+${formatMoney(nextPayout(habit, today))} tomorrow"
                             else -> "+${formatMoney(nextPayout(habit, today))} next time"
                         }
                     )

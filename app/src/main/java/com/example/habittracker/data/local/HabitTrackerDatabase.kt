@@ -11,7 +11,7 @@ import com.example.habittracker.model.SavingsGoal
 
 @Database(
     entities = [Habit::class, SavingsGoal::class, Deposit::class],
-    version = 2,
+    version = 3,
     exportSchema = true
 )
 @TypeConverters(Converters::class)
@@ -31,7 +31,7 @@ abstract class HabitTrackerDatabase : RoomDatabase() {
                     HabitTrackerDatabase::class.java,
                     "habit_tracker.db"
                 )
-                    .addMigrations(MIGRATION_1_2)
+                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
                     .build()
                     .also { INSTANCE = it }
             }

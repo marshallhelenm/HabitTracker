@@ -1,6 +1,6 @@
 # Habit Piggy
 
-An Android habit tracker where keeping your streaks fills a piggy bank. Every time you check off a habit, you earn money toward a savings goal: the habit's reward rate (from $0.25 to $20, $1 by default) times its current streak.
+An Android habit tracker where keeping your streaks fills a piggy bank. Every time you check off a habit, you earn money toward a savings goal: the habit's reward rate (from $0.25 to $20, $1 by default) times its current streak, or a fixed amount for habits set up that way.
 
 Built with Kotlin, Jetpack Compose (Material 3) and Room.
 
@@ -14,6 +14,7 @@ Built with Kotlin, Jetpack Compose (Material 3) and Room.
 ## How the money works
 
 - A check-in pays the habit's **reward rate** × the streak it reaches, so a $1.25 habit on day 4 pays $5. Home shows what each habit's next check-in will pay.
+- A **fixed-reward** habit pays the same amount every check-in, whatever its streak. Its streak can also be hidden: it's still counted behind the scenes, so turning it back on shows the real streak.
 - A habit pays into its assigned goal. Unassigned habits, and habits whose goal is completed or gone, pay into the pinned goal.
 - A goal's **daily cap** limits the total it can receive per day across all habits. Once it's hit, completions still count toward streaks but earn nothing.
 - A goal fills exactly to its target and is marked **Completed**. Anything extra overflows to the pinned goal, within that goal's own cap. If the pinned goal is the one completing, the pin moves to the first active goal in your order.

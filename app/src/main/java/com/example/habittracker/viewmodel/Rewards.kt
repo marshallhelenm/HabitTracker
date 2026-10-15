@@ -9,8 +9,9 @@ val REWARD_STEP = BigDecimal("0.25")
 val MIN_REWARD_RATE = BigDecimal("0.25")
 val MAX_REWARD_RATE = BigDecimal("20")
 
-// What a check-in pays when it brings the habit's streak to `streak`.
-fun payoutFor(habit: Habit, streak: Int): BigDecimal = habit.rewardRate * BigDecimal(streak)
+// What a check-in pays when it brings the habit's streak to `streak`. Fixed-reward habits ignore the streak.
+fun payoutFor(habit: Habit, streak: Int): BigDecimal =
+    if (habit.fixedReward) habit.rewardRate else habit.rewardRate * BigDecimal(streak)
 
 // What the habit's next check-in will pay: today's if it isn't done yet, otherwise the following one,
 // assuming the streak is kept. Daily caps may pay less; this is the amount before any cap.

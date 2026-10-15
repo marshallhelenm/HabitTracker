@@ -24,6 +24,7 @@ import java.math.BigDecimal
 import com.example.habittracker.ui.components.FrequencyPicker
 import com.example.habittracker.ui.components.GoalPicker
 import com.example.habittracker.ui.components.RewardStepper
+import com.example.habittracker.ui.components.RewardTypePicker
 import com.example.habittracker.ui.components.intervalDaysFrom
 
 @Composable
@@ -38,6 +39,10 @@ fun HabitForm(
     onIntervalTextChange: (String) -> Unit,
     rewardRate: BigDecimal,
     onRewardRateChange: (BigDecimal) -> Unit,
+    fixedReward: Boolean,
+    onFixedRewardChange: (Boolean) -> Unit,
+    showStreak: Boolean,
+    onShowStreakChange: (Boolean) -> Unit,
     goals: List<SavingsGoal>,
     goalId: Long?,
     onGoalChange: (Long?) -> Unit,
@@ -45,6 +50,7 @@ fun HabitForm(
     onCloseClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val streakShown = showStreak || !fixedReward
     Card(
         modifier = modifier.fillMaxWidth(),
         shape = MaterialTheme.shapes.large,
@@ -91,14 +97,24 @@ fun HabitForm(
                 singleLine = true
             )
 
-            FrequencyPicker(
-                custom = customFrequency,
-                onCustomChange = onCustomFrequencyChange,
-                daysText = intervalText,
-                onDaysTextChange = onIntervalTextChange
+            RewardTypePicker(
+                fixed = fixedReward,
+                onFixedChange = onFixedRewardChange,
+                showStreak = showStreak,
+                onShowStreakChange = onShowStreakChange
             )
 
-            RewardStepper(rate = rewardRate, onRateChange = onRewardRateChange)
+            RewardStepper(rate = rewardRate, onRateChange = onRewardRateChange, fixed = fixedReward)
+
+            // Frequency only decides how long a streak survives, so it's moot without one.
+            if (streakShown) {
+                FrequencyPicker(
+                    custom = customFrequency,
+                    onCustomChange = onCustomFrequencyChange,
+                    daysText = intervalText,
+                    onDaysTextChange = onIntervalTextChange
+                )
+            }
 
             GoalPicker(
                 goals = goals,
@@ -108,7 +124,7 @@ fun HabitForm(
 
             Button(
                 onClick = onSubmit,
-                enabled = title.isNotBlank() && intervalDaysFrom(customFrequency, intervalText) != null,
+                enabled = title.isNotBlank() && (!streakShown || intervalDaysFrom(customFrequency, intervalText) != null),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text("Add Habit")

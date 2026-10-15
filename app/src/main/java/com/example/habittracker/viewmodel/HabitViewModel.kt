@@ -37,6 +37,8 @@ class HabitViewModel(
         description: String,
         intervalDays: Int = 1,
         rewardRate: BigDecimal = BigDecimal.ONE,
+        fixedReward: Boolean = false,
+        showStreak: Boolean = true,
         goalId: Long? = null
     ) {
         val normalizedTitle = title.trim()
@@ -52,6 +54,8 @@ class HabitViewModel(
                         description = description.trim(),
                         intervalDays = intervalDays,
                         rewardRate = rewardRate,
+                        fixedReward = fixedReward,
+                        showStreak = showStreak || !fixedReward,
                         goalId = goalId
                     )
                 )

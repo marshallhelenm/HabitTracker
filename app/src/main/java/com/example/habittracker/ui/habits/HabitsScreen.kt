@@ -60,6 +60,8 @@ fun HabitsScreen(
     var formCustomFrequency by rememberSaveable { mutableStateOf(false) }
     var formIntervalText by rememberSaveable { mutableStateOf("") }
     var formRewardRate by rememberSaveable { mutableStateOf(BigDecimal.ONE) }
+    var formFixedReward by rememberSaveable { mutableStateOf(false) }
+    var formShowStreak by rememberSaveable { mutableStateOf(true) }
     var formGoalId by rememberSaveable { mutableStateOf<Long?>(null) }
 
     Column(
@@ -80,6 +82,10 @@ fun HabitsScreen(
                 onIntervalTextChange = { formIntervalText = it },
                 rewardRate = formRewardRate,
                 onRewardRateChange = { formRewardRate = it },
+                fixedReward = formFixedReward,
+                onFixedRewardChange = { formFixedReward = it },
+                showStreak = formShowStreak,
+                onShowStreakChange = { formShowStreak = it },
                 goals = goals,
                 goalId = formGoalId,
                 onGoalChange = { formGoalId = it },
@@ -89,6 +95,8 @@ fun HabitsScreen(
                         description = formDescription,
                         intervalDays = intervalDaysFrom(formCustomFrequency, formIntervalText) ?: 1,
                         rewardRate = formRewardRate,
+                        fixedReward = formFixedReward,
+                        showStreak = formShowStreak,
                         goalId = formGoalId
                     )
                     formTitle = ""
@@ -97,6 +105,8 @@ fun HabitsScreen(
                     formCustomFrequency = false
                     formIntervalText = ""
                     formRewardRate = BigDecimal.ONE
+                    formFixedReward = false
+                    formShowStreak = true
                     formOpen = false
                 },
                 onCloseClick = { formOpen = false }

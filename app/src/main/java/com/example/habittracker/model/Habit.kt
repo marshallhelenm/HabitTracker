@@ -21,8 +21,14 @@ data class Habit(
     @ColumnInfo(defaultValue = "1")
     val intervalDays: Int = 1,
     // Dollars earned per streak step: a check-in pays rewardRate × the streak it reaches.
+    // For a fixed-reward habit, the flat amount every check-in pays instead.
     @ColumnInfo(defaultValue = "'1'")
     val rewardRate: BigDecimal = BigDecimal.ONE,
+    @ColumnInfo(defaultValue = "0")
+    val fixedReward: Boolean = false,
+    // Only fixed-reward habits can hide their streak. It's still counted, just not shown.
+    @ColumnInfo(defaultValue = "1")
+    val showStreak: Boolean = true,
     val currentStreak: Int = 0,
     val longestStreak: Int = 0,
     val createdAt: LocalDateTime = LocalDateTime.now(),
