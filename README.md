@@ -4,9 +4,19 @@ An Android habit tracker where keeping your streaks fills a piggy bank. Every ti
 
 Built with Kotlin, Jetpack Compose (Material 3) and Room.
 
+<p>
+  <img src="docs/screenshots/home.png" alt="Home: the pinned goal's piggy bank and today's habits" width="200">
+  <img src="docs/screenshots/habits.png" alt="Habits: every habit with its streak, reward and goal" width="200">
+  <img src="docs/screenshots/goals.png" alt="Goals: savings goals with their progress" width="200">
+  <img src="docs/screenshots/edit-habit.png" alt="Editing a habit's reward, frequency and goal" width="200">
+</p>
+
 ## Features
 
+A bottom bar switches between the three screens: **Home**, **Habits** and **Goals**.
+
 - **Habits:** create, edit, track or untrack, and check off habits once a day. A habit is daily or custom ("at least once every N days"); its streak continues as long as it's done within that window and restarts otherwise. Custom habits show when they're next due. A habit checked by mistake can be un-checked the same day, which restores its streak and takes back the coins it earned.
+- **Rewards:** each habit either grows its reward with its streak or pays a fixed amount, and a fixed-reward habit can hide its streak. Set the amount with the − / + buttons (0.25 at a time), or tap it to type any amount from 0.25 to 20 coins.
 - **Savings goals:** several goals at once, each with a target and an optional daily earnings cap. One goal is always **pinned**.
 - **Home carousel:** swipe, or tap the arrows, between active goals: the pinned goal first, then the rest in your order. The habit list below follows whichever goal is on screen.
 - **Goals screen:** sort by your order, A–Z or progress (tap A–Z or Progress again to reverse it), and hide completed goals. In "My order", drag goals by their handles to set the carousel order.
@@ -78,7 +88,6 @@ adb install -r app/build/outputs/apk/named/HabitPiggy-1.1.apk
 ```
 
 - Every update must be signed with the same key. A lost key means uninstalling, and losing the app's data, before a new build will install.
-- Bump `versionCode` in `app/build.gradle.kts` for each update you install over an existing one.
 - Debug and release builds share an app ID but not a signature, so a device holds one or the other. Uninstall one before installing the other.
 
 ## Project structure
@@ -91,18 +100,18 @@ adb install -r app/build/outputs/apk/named/HabitPiggy-1.1.apk
 | `viewmodel` | `HabitViewModel`, `SavingsGoalViewModel` and the earnings planner |
 | `ui` | App shell, navigation and shared habit actions |
 | `ui.home`, `ui.habits`, `ui.goals` | The three screens |
-| `ui.components` | Reusable pieces (piggy bank card, habit card, progress bar, goal picker, dialogs) |
+| `ui.components` | Reusable pieces (piggy bank card, habit card, progress bar, goal and reward pickers, bottom bar, dialogs) |
 | `ui.theme` | Colours, typography and shapes |
 
 ## Database and migrations
 
-- The Room database is at **version 2**. Each version's schema is exported to `app/schemas/`, and those files are committed.
+- The Room database is at **version 3**. Each version's schema is exported to `app/schemas/`, and those files are committed.
 - **Every schema change needs a `Migration`**: bump the version, add the migration in `data/local/` and register it on the database builder in `HabitTrackerDatabase.kt`. The database is never wiped and recreated on a version mismatch: without a migration, the app fails on launch rather than losing data.
 - Each migration should have an instrumented test that uses `MigrationTestHelper` to build the old version, migrate it, and let Room validate the result against the exported schema.
 
 ## Testing
 
-- **Unit tests** (`app/src/test`) cover the earnings rules, the ViewModel's goal logic (using a fake repository) and the list ordering. They run on your computer, with no device needed.
+- **Unit tests** (`app/src/test`) cover the earnings and reward rules, coin formatting, the ViewModel's goal logic (using a fake repository) and the list ordering. They run on your computer, with no device needed.
 - **Instrumented tests** (`app/src/androidTest`) cover DAO queries, and need an emulator or device. `./gradlew connectedAndroidTest` uninstalls the app afterwards, which deletes its data. To keep your data, install and run the tests directly:
 
 ```bash
@@ -119,6 +128,7 @@ adb shell am instrument -w io.github.marshallhelenm.habitpiggy.test/androidx.tes
 
 - goals at different fill levels, including one past its target and one archived;
 - assigned, unassigned and untracked habits;
+- habits that grow with their streak and fixed-reward ones, one with its streak hidden;
 - habits already done today;
 - scenarios that trigger the daily cap and goal completion.
 
@@ -134,4 +144,4 @@ Planned work is tracked in [ROADMAP.md](ROADMAP.md).
 
 ## Artwork
 
-The piggy bank and coin artwork, including the app icon and launch screen, are original drawings made for this project.
+The piggy bank and coin artwork, including the app icon and launch screen, are original drawings made for this project. The screenshots in `docs/screenshots/` show the app with the test data from `scripts/seed.sql`.

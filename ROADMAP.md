@@ -16,3 +16,9 @@ Planned work, roughly in priority order.
 - **Reset streaks on missed days (daily habits)** — a streak shows as broken ("Start a new streak") as soon as a day is missed, worked out from the last completion date rather than rewritten in the database; the on-screen date rolls over at midnight and on returning to the app.
 - **Custom-interval habits** — a habit is daily or "at least once every N days" (`intervalDays`); the streak counts completions in a row and breaks once more than N days pass without one. Custom habits show when they're next due. Replaced the old `WEEKLY`/`CUSTOM` frequencies (weekly habits migrated to every 7 days).
 - **Reorder goals** — in the Goals screen's "My order" sort, drag handles reorder active goals; the Home carousel shows the pinned goal, then this order. New goals go last, and when the pin moves on its own it goes to the first goal in the order. Stored as `sortOrder` on each goal.
+- **Per-habit reward rates** — each habit sets its own rate; a check-in pays rate × streak.
+- **Bottom navigation** — Home, Habits and Goals are switched with a bottom bar instead of a hamburger menu.
+- **Hand-corrected goal balances** — a goal's balance can be set directly from its edit screen, after a confirmation.
+- **Fixed-reward habits** — a habit can pay a fixed amount per check-in instead of growing with its streak, and can hide its streak (still counted in the background).
+- **Piggy coins** — amounts are shown as coins rather than dollars, so a coin can stand for whatever the user likes.
+- **Typed reward amounts** — tap the reward amount to type any amount from 0.25 to 20 coins; the − / + buttons still step by 0.25.
