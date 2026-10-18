@@ -31,7 +31,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.example.habittracker.model.SavingsGoal
-import com.example.habittracker.ui.formatMoney
+import com.example.habittracker.ui.formatCoins
 import com.example.habittracker.viewmodel.parseBalance
 import java.math.BigDecimal
 
@@ -161,7 +161,7 @@ fun EditSavingsGoalScreen(
                             }
                             val newBalance = parseBalance(balanceText)
                             if (newBalance == null) {
-                                inputError = "The balance must be zero or more, in dollars and cents."
+                                inputError = "The balance must be zero or more, with at most two decimal places."
                                 return@Button
                             }
 
@@ -185,7 +185,7 @@ fun EditSavingsGoalScreen(
             title = { Text("Change the balance?") },
             text = {
                 Text(
-                    "Change ${goal.name}'s balance from ${formatMoney(goal.currentAmount)} to ${formatMoney(newBalance)}?"
+                    "Change ${goal.name}'s balance from ${formatCoins(goal.currentAmount)} to ${formatCoins(newBalance)}?"
                 )
             },
             confirmButton = {

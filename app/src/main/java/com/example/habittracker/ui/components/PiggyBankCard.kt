@@ -23,7 +23,7 @@ import androidx.compose.ui.unit.dp
 import com.example.habittracker.R
 import com.example.habittracker.model.SavingsGoal
 import com.example.habittracker.model.SavingsGoalStatus
-import com.example.habittracker.ui.formatMoney
+import com.example.habittracker.ui.formatCoins
 import kotlin.math.roundToInt
 
 @Composable
@@ -79,9 +79,9 @@ fun PiggyBankCard(
                         text = if (goal == null) {
                             "Pin a goal to start saving"
                         } else if (goal.status == SavingsGoalStatus.COMPLETED) {
-                            "${formatMoney(goal.currentAmount)} saved · Completed 🎉"
+                            "${formatCoins(goal.currentAmount)} saved · Completed 🎉"
                         } else {
-                            "${formatMoney(goal.currentAmount)} saved of ${formatMoney(goal.targetAmount)}"
+                            "${formatCoins(goal.currentAmount)} saved of ${formatCoins(goal.targetAmount)}"
                         },
                         style = MaterialTheme.typography.bodyMedium
                     )

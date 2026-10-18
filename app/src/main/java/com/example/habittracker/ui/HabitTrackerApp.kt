@@ -53,7 +53,7 @@ fun HabitTrackerApp(
     val capNotice = notices.filterIsInstance<EarningsNotice.DailyCapReached>().firstOrNull()
     LaunchedEffect(capNotice) {
         if (capNotice != null) {
-            snackbarHostState.showSnackbar("${capNotice.goalName} hit today's ${formatMoney(capNotice.cap)} limit")
+            snackbarHostState.showSnackbar("${capNotice.goalName} hit today's ${formatCoins(capNotice.cap)} limit")
             savingsGoalViewModel.dismissNotice(capNotice)
         }
     }
@@ -189,7 +189,7 @@ private fun GoalCompletedDialog(notice: EarningsNotice.GoalCompleted, onDismiss:
         text = {
             Text(
                 if (notice.overflowGoalName != null) {
-                    "The extra ${formatMoney(notice.overflowAmount)} went to ${notice.overflowGoalName}."
+                    "The extra ${formatCoins(notice.overflowAmount)} went to ${notice.overflowGoalName}."
                 } else {
                     "Its habits will now save toward your pinned goal."
                 }

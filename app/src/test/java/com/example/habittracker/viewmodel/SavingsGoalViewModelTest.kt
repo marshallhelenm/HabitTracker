@@ -504,7 +504,7 @@ class SavingsGoalViewModelTest {
 
         assertEquals(0, BigDecimal("62.50").compareTo(repo.amountOf(1)))
         assertTrue("manual changes aren't deposits", repo.deposits.isEmpty())
-        // The daily cap is untouched, so a habit can still earn the full $5 today.
+        // The daily cap is untouched, so a habit can still earn the full 5 coins today.
         vm.recordEarningsForHabitCompletion(habit(goalId = 1, streak = 5), goal = null)
         advanceUntilIdle()
         assertEquals(0, BigDecimal("67.50").compareTo(repo.amountOf(1)))

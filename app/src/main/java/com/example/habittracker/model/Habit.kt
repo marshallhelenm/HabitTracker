@@ -20,7 +20,7 @@ data class Habit(
     // The streak survives while the habit is done at least once every this many days; 1 means daily.
     @ColumnInfo(defaultValue = "1")
     val intervalDays: Int = 1,
-    // Dollars earned per streak step: a check-in pays rewardRate × the streak it reaches.
+    // Coins earned per streak step: a check-in pays rewardRate × the streak it reaches.
     // For a fixed-reward habit, the flat amount every check-in pays instead.
     @ColumnInfo(defaultValue = "'1'")
     val rewardRate: BigDecimal = BigDecimal.ONE,

@@ -51,7 +51,7 @@ import com.example.habittracker.ui.components.GoalProgressBar
 import com.example.habittracker.ui.components.piggyFilterChipBorder
 import com.example.habittracker.ui.components.piggyFilterChipColors
 import com.example.habittracker.ui.home.habitsForGoalPage
-import com.example.habittracker.ui.formatMoney
+import com.example.habittracker.ui.formatCoins
 import com.example.habittracker.viewmodel.SavingsGoalViewModel
 import com.example.habittracker.viewmodel.nextPinnedGoal
 import sh.calvin.reorderable.ReorderableItem
@@ -309,7 +309,7 @@ fun SavingsGoalsScreen(
                                 GoalProgressBar(percentFilled = viewModel.percentCompleted(goal), height = 14.dp)
                                 Row(modifier = Modifier.fillMaxWidth()) {
                                     Text(
-                                        text = "${formatMoney(goal.currentAmount)} of ${formatMoney(goal.targetAmount)}",
+                                        text = "${formatCoins(goal.currentAmount)} of ${formatCoins(goal.targetAmount)}",
                                         style = MaterialTheme.typography.bodyMedium,
                                         modifier = Modifier.weight(1f)
                                     )

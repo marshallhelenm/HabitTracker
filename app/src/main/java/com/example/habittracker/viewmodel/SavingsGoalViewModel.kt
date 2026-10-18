@@ -318,7 +318,7 @@ class SavingsGoalViewModel(
         return _savingsGoals.value.firstOrNull { it.pinned }
     }
 
-    // Keeps stored goals consistent with the money rules:
+    // Keeps stored goals consistent with the coin rules:
     //  - an active goal at or past its target is completed (covers data saved before completion existed);
     //  - only active goals may be pinned, and whenever an active goal exists exactly one is pinned,
     //    since unassigned habits pay into it. The pin falls to the first active goal in the user's order.

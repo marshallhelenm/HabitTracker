@@ -1,19 +1,21 @@
 # Habit Piggy
 
-An Android habit tracker where keeping your streaks fills a piggy bank. Every time you check off a habit, you earn money toward a savings goal: the habit's reward rate (from $0.25 to $20, $1 by default) times its current streak, or a fixed amount for habits set up that way.
+An Android habit tracker where keeping your streaks fills a piggy bank. Every time you check off a habit, you earn piggy coins ("coins" for short) toward a savings goal: the habit's reward rate (from 0.25 to 20 coins, 1 by default) times its current streak, or a fixed amount for habits set up that way.
 
 Built with Kotlin, Jetpack Compose (Material 3) and Room.
 
 ## Features
 
-- **Habits:** create, edit, track or untrack, and check off habits once a day. A habit is daily or custom ("at least once every N days"); its streak continues as long as it's done within that window and restarts otherwise. Custom habits show when they're next due. A habit checked by mistake can be un-checked the same day, which restores its streak and takes back the money it earned.
+- **Habits:** create, edit, track or untrack, and check off habits once a day. A habit is daily or custom ("at least once every N days"); its streak continues as long as it's done within that window and restarts otherwise. Custom habits show when they're next due. A habit checked by mistake can be un-checked the same day, which restores its streak and takes back the coins it earned.
 - **Savings goals:** several goals at once, each with a target and an optional daily earnings cap. One goal is always **pinned**.
 - **Home carousel:** swipe, or tap the arrows, between active goals: the pinned goal first, then the rest in your order. The habit list below follows whichever goal is on screen.
 - **Goals screen:** sort by your order, A–Z or progress (tap A–Z or Progress again to reverse it), and hide completed goals. In "My order", drag goals by their handles to set the carousel order.
 
-## How the money works
+## How the coins work
 
-- A check-in pays the habit's **reward rate** × the streak it reaches, so a $1.25 habit on day 4 pays $5. Home shows what each habit's next check-in will pay.
+Coins aren't tied to a currency, so you decide what one is worth: a dollar, a euro, ten minutes of gaming.
+
+- A check-in pays the habit's **reward rate** × the streak it reaches, so a 1.25-coin habit on day 4 pays 5 coins. Home shows what each habit's next check-in will pay.
 - A **fixed-reward** habit pays the same amount every check-in, whatever its streak. Its streak can also be hidden: it's still counted behind the scenes, so turning it back on shows the real streak.
 - A habit pays into its assigned goal. Unassigned habits, and habits whose goal is completed or gone, pay into the pinned goal.
 - A goal's **daily cap** limits the total it can receive per day across all habits. Once it's hit, completions still count toward streaks but earn nothing.

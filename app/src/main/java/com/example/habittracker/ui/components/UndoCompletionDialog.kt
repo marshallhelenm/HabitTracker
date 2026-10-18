@@ -7,7 +7,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import com.example.habittracker.model.Habit
 
-// Un-checking takes money back out of goals, so it's confirmed rather than a single stray tap.
+// Un-checking takes coins back out of goals, so it's confirmed rather than a single stray tap.
 @Composable
 fun UndoCompletionDialog(
     habit: Habit,

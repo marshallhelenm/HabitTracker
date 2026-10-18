@@ -13,7 +13,9 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.LocalFireDepartment
-import androidx.compose.material.icons.filled.MonetizationOn
+import androidx.compose.foundation.Image
+import androidx.compose.ui.res.painterResource
+import com.example.habittracker.R
 import androidx.compose.material.icons.filled.Savings
 import androidx.compose.material.icons.outlined.RadioButtonUnchecked
 import androidx.compose.material3.Card
@@ -35,7 +37,7 @@ import java.time.temporal.ChronoUnit
 import java.util.Locale
 import com.example.habittracker.model.Habit
 import com.example.habittracker.ui.LocalToday
-import com.example.habittracker.ui.formatMoney
+import com.example.habittracker.ui.formatCoins
 import com.example.habittracker.viewmodel.dueBy
 import com.example.habittracker.viewmodel.effectiveStreak
 import com.example.habittracker.viewmodel.isCompletedOn
@@ -154,12 +156,12 @@ fun HabitCard(
                     }
                     RewardChip(
                         text = when {
-                            !showNextPayout && habit.fixedReward -> "${formatMoney(habit.rewardRate)} each time"
-                            !showNextPayout -> "${formatMoney(habit.rewardRate)} × streak"
-                            !completedToday -> "+${formatMoney(nextPayout(habit, today))}"
+                            !showNextPayout && habit.fixedReward -> "${formatCoins(habit.rewardRate)} each time"
+                            !showNextPayout -> "${formatCoins(habit.rewardRate)} × streak"
+                            !completedToday -> "+${formatCoins(nextPayout(habit, today))}"
                             // Without a visible streak there's no interval to wait out; it can be done again tomorrow.
-                            habit.intervalDays == 1 || !habit.showStreak -> "+${formatMoney(nextPayout(habit, today))} tomorrow"
-                            else -> "+${formatMoney(nextPayout(habit, today))} next time"
+                            habit.intervalDays == 1 || !habit.showStreak -> "+${formatCoins(nextPayout(habit, today))} tomorrow"
+                            else -> "+${formatCoins(nextPayout(habit, today))} next time"
                         }
                     )
                     if (goalLabel != null) {
@@ -218,10 +220,9 @@ private fun RewardChip(text: String) {
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(4.dp)
         ) {
-            Icon(
-                imageVector = Icons.Filled.MonetizationOn,
+            Image(
+                painter = painterResource(id = R.drawable.coin),
                 contentDescription = null,
-                tint = MaterialTheme.colorScheme.tertiary,
                 modifier = Modifier.size(16.dp)
             )
             Text(text = text, style = MaterialTheme.typography.labelMedium, maxLines = 1)

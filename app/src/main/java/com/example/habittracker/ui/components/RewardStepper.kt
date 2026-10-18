@@ -16,7 +16,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import com.example.habittracker.ui.formatMoney
+import com.example.habittracker.ui.formatCoins
 import com.example.habittracker.viewmodel.MAX_REWARD_RATE
 import com.example.habittracker.viewmodel.MIN_REWARD_RATE
 import com.example.habittracker.viewmodel.REWARD_STEP
@@ -48,7 +48,7 @@ fun RewardStepper(
             Icon(imageVector = Icons.Filled.Remove, contentDescription = "Lower reward")
         }
         Text(
-            text = formatMoney(rate),
+            text = formatCoins(rate),
             style = MaterialTheme.typography.titleMedium,
             textAlign = TextAlign.Center,
             modifier = Modifier.widthIn(min = 64.dp)
