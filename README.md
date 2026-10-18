@@ -71,10 +71,10 @@ Release builds are signed with a key kept outside the repo. Copy `keystore.prope
 ./gradlew :app:assembleRelease
 ```
 
-The signed APK is written to `app/build/outputs/apk/release/app-release.apk`. Install it on a phone with USB debugging enabled:
+The signed APK is written to `app/build/outputs/apk/release/app-release.apk`, and a copy named after the app and version (e.g. `HabitPiggy-1.0.apk`) goes to `app/build/outputs/apk/named/`. Raise `versionCode` (and usually `versionName`) in `app/build.gradle.kts` before each release, so phones treat it as an update and each APK gets its own name. Install it on a phone with USB debugging enabled:
 
 ```bash
-adb install -r app/build/outputs/apk/release/app-release.apk
+adb install -r app/build/outputs/apk/named/HabitPiggy-1.0.apk
 ```
 
 - Every update must be signed with the same key. A lost key means uninstalling, and losing the app's data, before a new build will install.

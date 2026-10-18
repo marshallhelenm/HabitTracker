@@ -1,3 +1,4 @@
+import com.android.build.api.artifact.SingleArtifact
 import java.util.Properties
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
@@ -62,6 +63,22 @@ android {
 
     buildFeatures {
         compose = true
+    }
+}
+
+// AGP 9 dropped renaming APK outputs in place, so release builds also copy the APK to
+// build/outputs/apk/named/HabitPiggy-<versionName>.apk.
+androidComponents {
+    onVariants(selector().withBuildType("release")) { variant ->
+        val copyNamedApk = tasks.register<Copy>("copyNamed${variant.name.replaceFirstChar(Char::uppercase)}Apk") {
+            from(variant.artifacts.get(SingleArtifact.APK)) {
+                include("*.apk")
+                rename { "HabitPiggy-${variant.outputs.single().versionName.get()}.apk" }
+            }
+            into(layout.buildDirectory.dir("outputs/apk/named"))
+        }
+        tasks.matching { it.name == "assemble${variant.name.replaceFirstChar(Char::uppercase)}" }
+            .configureEach { finalizedBy(copyNamedApk) }
     }
 }
 
