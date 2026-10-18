@@ -60,4 +60,30 @@ class RewardsTest {
         assertMoney("2", nextPayout(habit(9, today.minusDays(5), "2", fixed = true), today))
         assertMoney("2", nextPayout(habit(9, today, "2", fixed = true), today))
     }
+
+    @Test
+    fun rewardRateFrom_acceptsAnyCentAmountInRange() {
+        assertMoney("3", rewardRateFrom("3")!!)
+        assertMoney("1.5", rewardRateFrom(" 1.50 ")!!)
+        assertMoney("0.25", rewardRateFrom("0.25")!!)
+        assertMoney("20", rewardRateFrom("20")!!)
+        assertMoney("1.1", rewardRateFrom("1,10")!!)
+    }
+
+    @Test
+    fun rewardRateFrom_rejectsOutOfRangeOrTooPrecise() {
+        assertEquals(null, rewardRateFrom(""))
+        assertEquals(null, rewardRateFrom("abc"))
+        assertEquals(null, rewardRateFrom("0.10"))
+        assertEquals(null, rewardRateFrom("20.01"))
+        assertEquals(null, rewardRateFrom("1.234"))
+        assertEquals(null, rewardRateFrom("-1"))
+    }
+
+    @Test
+    fun rewardRateText_dropsTrailingZeros() {
+        assertEquals("1.5", rewardRateText(BigDecimal("1.50")))
+        assertEquals("2", rewardRateText(BigDecimal("2.00")))
+        assertEquals("20", rewardRateText(BigDecimal("20")))
+    }
 }

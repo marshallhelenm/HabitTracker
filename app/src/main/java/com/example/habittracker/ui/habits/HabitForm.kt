@@ -20,12 +20,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.example.habittracker.model.SavingsGoal
-import java.math.BigDecimal
 import com.example.habittracker.ui.components.FrequencyPicker
 import com.example.habittracker.ui.components.GoalPicker
 import com.example.habittracker.ui.components.RewardStepper
 import com.example.habittracker.ui.components.RewardTypePicker
 import com.example.habittracker.ui.components.intervalDaysFrom
+import com.example.habittracker.viewmodel.rewardRateFrom
 
 @Composable
 fun HabitForm(
@@ -37,8 +37,8 @@ fun HabitForm(
     onCustomFrequencyChange: (Boolean) -> Unit,
     intervalText: String,
     onIntervalTextChange: (String) -> Unit,
-    rewardRate: BigDecimal,
-    onRewardRateChange: (BigDecimal) -> Unit,
+    rewardRateText: String,
+    onRewardRateTextChange: (String) -> Unit,
     fixedReward: Boolean,
     onFixedRewardChange: (Boolean) -> Unit,
     showStreak: Boolean,
@@ -104,7 +104,7 @@ fun HabitForm(
                 onShowStreakChange = onShowStreakChange
             )
 
-            RewardStepper(rate = rewardRate, onRateChange = onRewardRateChange, fixed = fixedReward)
+            RewardStepper(rateText = rewardRateText, onRateTextChange = onRewardRateTextChange, fixed = fixedReward)
 
             // Frequency only decides how long a streak survives, so it's moot without one.
             if (streakShown) {
@@ -124,7 +124,7 @@ fun HabitForm(
 
             Button(
                 onClick = onSubmit,
-                enabled = title.isNotBlank() && (!streakShown || intervalDaysFrom(customFrequency, intervalText) != null),
+                enabled = title.isNotBlank() && rewardRateFrom(rewardRateText) != null && (!streakShown || intervalDaysFrom(customFrequency, intervalText) != null),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text("Add Habit")

@@ -25,6 +25,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogProperties
 import com.example.habittracker.model.Habit
 import com.example.habittracker.model.SavingsGoal
+import com.example.habittracker.viewmodel.rewardRateFrom
+import com.example.habittracker.viewmodel.rewardRateText
 
 @Composable
 fun EditHabitDialog(
@@ -43,7 +45,8 @@ fun EditHabitDialog(
     }
     val intervalDays = intervalDaysFrom(customFrequency, intervalText)
     var goalId by rememberSaveable(habit.id) { mutableStateOf(habit.goalId) }
-    var rewardRate by rememberSaveable(habit.id) { mutableStateOf(habit.rewardRate) }
+    var rewardRateText by rememberSaveable(habit.id) { mutableStateOf(rewardRateText(habit.rewardRate)) }
+    val rewardRate = rewardRateFrom(rewardRateText)
     var fixedReward by rememberSaveable(habit.id) { mutableStateOf(habit.fixedReward) }
     var showStreak by rememberSaveable(habit.id) { mutableStateOf(habit.showStreak) }
     val streakShown = showStreak || !fixedReward
@@ -86,7 +89,7 @@ fun EditHabitDialog(
                     onShowStreakChange = { showStreak = it }
                 )
 
-                RewardStepper(rate = rewardRate, onRateChange = { rewardRate = it }, fixed = fixedReward)
+                RewardStepper(rateText = rewardRateText, onRateTextChange = { rewardRateText = it }, fixed = fixedReward)
 
                 // Hidden without a streak; the habit keeps its interval for if the streak comes back.
                 if (streakShown) {
@@ -119,7 +122,7 @@ fun EditHabitDialog(
         },
         confirmButton = {
             Button(
-                enabled = title.isNotBlank() && (!streakShown || intervalDays != null),
+                enabled = title.isNotBlank() && rewardRate != null && (!streakShown || intervalDays != null),
                 onClick = {
                     onSave(
                         habit.copy(
@@ -128,7 +131,7 @@ fun EditHabitDialog(
                             tracking = tracking,
                             intervalDays = intervalDays ?: habit.intervalDays,
                             goalId = goalId,
-                            rewardRate = rewardRate,
+                            rewardRate = rewardRate ?: habit.rewardRate,
                             fixedReward = fixedReward,
                             showStreak = streakShown
                         )

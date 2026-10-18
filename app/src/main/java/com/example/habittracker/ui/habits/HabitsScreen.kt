@@ -37,10 +37,10 @@ import com.example.habittracker.ui.components.HabitCard
 import com.example.habittracker.ui.components.intervalDaysFrom
 import com.example.habittracker.viewmodel.HabitViewModel
 import com.example.habittracker.viewmodel.SavingsGoalViewModel
+import com.example.habittracker.viewmodel.rewardRateFrom
 import com.example.habittracker.ui.completeHabit
 import com.example.habittracker.ui.toggleHabitToday
 import com.example.habittracker.ui.components.UndoCompletionDialog
-import java.math.BigDecimal
 import java.time.LocalDate
 
 @Composable
@@ -59,7 +59,7 @@ fun HabitsScreen(
     var formDescription by rememberSaveable { mutableStateOf("") }
     var formCustomFrequency by rememberSaveable { mutableStateOf(false) }
     var formIntervalText by rememberSaveable { mutableStateOf("") }
-    var formRewardRate by rememberSaveable { mutableStateOf(BigDecimal.ONE) }
+    var formRewardRateText by rememberSaveable { mutableStateOf("1") }
     var formFixedReward by rememberSaveable { mutableStateOf(false) }
     var formShowStreak by rememberSaveable { mutableStateOf(true) }
     var formGoalId by rememberSaveable { mutableStateOf<Long?>(null) }
@@ -80,8 +80,8 @@ fun HabitsScreen(
                 onCustomFrequencyChange = { formCustomFrequency = it },
                 intervalText = formIntervalText,
                 onIntervalTextChange = { formIntervalText = it },
-                rewardRate = formRewardRate,
-                onRewardRateChange = { formRewardRate = it },
+                rewardRateText = formRewardRateText,
+                onRewardRateTextChange = { formRewardRateText = it },
                 fixedReward = formFixedReward,
                 onFixedRewardChange = { formFixedReward = it },
                 showStreak = formShowStreak,
@@ -94,7 +94,7 @@ fun HabitsScreen(
                         title = formTitle,
                         description = formDescription,
                         intervalDays = intervalDaysFrom(formCustomFrequency, formIntervalText) ?: 1,
-                        rewardRate = formRewardRate,
+                        rewardRate = rewardRateFrom(formRewardRateText) ?: return@HabitForm,
                         fixedReward = formFixedReward,
                         showStreak = formShowStreak,
                         goalId = formGoalId
@@ -104,7 +104,7 @@ fun HabitsScreen(
                     formGoalId = null
                     formCustomFrequency = false
                     formIntervalText = ""
-                    formRewardRate = BigDecimal.ONE
+                    formRewardRateText = "1"
                     formFixedReward = false
                     formShowStreak = true
                     formOpen = false
