@@ -13,7 +13,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 
-// "Grows with streak" / "Fixed amount" chips. Fixed reveals a switch for showing the streak, since
+// "Streak" / "Fixed" chips. Fixed reveals a switch for showing the streak, since
 // only a fixed reward makes sense without one.
 @Composable
 fun RewardTypePicker(
@@ -26,7 +26,7 @@ fun RewardTypePicker(
     Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(6.dp)) {
         Text(text = "Reward", style = MaterialTheme.typography.labelLarge)
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            listOf(false to "Grows with streak", true to "Fixed amount").forEach { (isFixed, label) ->
+            listOf(false to "Streak", true to "Fixed").forEach { (isFixed, label) ->
                 FilterChip(
                     selected = fixed == isFixed,
                     onClick = { onFixedChange(isFixed) },
