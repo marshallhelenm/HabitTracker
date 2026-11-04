@@ -21,7 +21,7 @@ val Typography = defaultTypography.copy(
     displaySmall = defaultTypography.displaySmall.copy(fontFamily = Rubik),
     headlineLarge = defaultTypography.headlineLarge.copy(fontFamily = Modak),
     headlineMedium = defaultTypography.headlineMedium.copy(fontFamily = Modak),
-    headlineSmall = defaultTypography.headlineSmall.copy(fontFamily = Modak),
+    headlineSmall = defaultTypography.headlineSmall.copy(fontFamily = CherryBombOne),
     titleLarge = defaultTypography.titleLarge.copy(fontFamily = CherryBombOne),
     titleMedium = defaultTypography.titleMedium.copy(fontFamily = CherryBombOne),
     titleSmall = defaultTypography.titleSmall.copy(fontFamily = CherryBombOne),
