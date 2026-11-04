@@ -26,6 +26,8 @@ import com.example.habittracker.ui.goals.EditSavingsGoalScreen
 import com.example.habittracker.ui.goals.SavingsGoalsScreen
 import com.example.habittracker.ui.habits.HabitsScreen
 import com.example.habittracker.ui.home.HomeScreen
+import com.example.habittracker.ui.settings.SettingsScreen
+import com.example.habittracker.data.AppSettings
 import com.example.habittracker.viewmodel.EarningsNotice
 import com.example.habittracker.viewmodel.HabitViewModel
 import com.example.habittracker.viewmodel.SavingsGoalViewModel
@@ -34,13 +36,15 @@ private enum class AppScreen {
     Home,
     Habits,
     Goals,
-    GoalEdit
+    GoalEdit,
+    Settings
 }
 
 @Composable
 fun HabitTrackerApp(
     habitViewModel: HabitViewModel,
     savingsGoalViewModel: SavingsGoalViewModel,
+    appSettings: AppSettings,
     modifier: Modifier = Modifier
 ) {
     var currentScreen by rememberSaveable { mutableStateOf(AppScreen.Home) }
@@ -67,11 +71,12 @@ fun HabitTrackerApp(
         AppScreen.Habits -> "Habits"
         AppScreen.Goals -> "Goals"
         AppScreen.GoalEdit -> "Edit Goal"
+        AppScreen.Settings -> "Settings"
     }
 
-    // The bottom bar item to highlight; Edit Goal is a sub-screen of Goals.
+    // The bottom bar item to highlight; Edit Goal is a sub-screen of Goals, Settings of Home.
     val destination = when (currentScreen) {
-        AppScreen.Home -> AppDestination.Home
+        AppScreen.Home, AppScreen.Settings -> AppDestination.Home
         AppScreen.Habits -> AppDestination.Habits
         AppScreen.Goals, AppScreen.GoalEdit -> AppDestination.Goals
     }
@@ -86,6 +91,8 @@ fun HabitTrackerApp(
         }
     }
 
+    val isSubScreen = currentScreen == AppScreen.GoalEdit || currentScreen == AppScreen.Settings
+
     // Home is the root, so back there falls through to the system and closes the app.
     BackHandler(enabled = currentScreen != AppScreen.Home) { goBack() }
 
@@ -95,7 +102,8 @@ fun HabitTrackerApp(
         topBar = {
             AppTopBar(
                 title = screenTitle,
-                onBack = if (currentScreen == AppScreen.GoalEdit) ::goBack else null
+                onBack = if (isSubScreen) ::goBack else null,
+                onSettings = if (isSubScreen) null else { { currentScreen = AppScreen.Settings } }
             )
         },
         bottomBar = {
@@ -121,6 +129,7 @@ fun HabitTrackerApp(
                 HomeScreen(
                     habitViewModel = habitViewModel,
                     savingsGoalViewModel = savingsGoalViewModel,
+                    appSettings = appSettings,
                     onCreateGoal = { currentScreen = AppScreen.Goals },
                     modifier = screenModifier
                 )
@@ -145,6 +154,10 @@ fun HabitTrackerApp(
                     },
                     modifier = screenModifier
                 )
+            }
+
+            AppScreen.Settings -> {
+                SettingsScreen(appSettings = appSettings, modifier = screenModifier)
             }
 
             AppScreen.GoalEdit -> {

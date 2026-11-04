@@ -10,6 +10,12 @@ fun completeHabit(habitViewModel: HabitViewModel, savingsGoalViewModel: SavingsG
     savingsGoalViewModel.recordEarningsForHabitCompletion(updatedHabit, goal = null)
 }
 
+// The streak saver's Yes: counts the habit as done yesterday, reward included.
+fun completeHabitYesterday(habitViewModel: HabitViewModel, savingsGoalViewModel: SavingsGoalViewModel, habit: Habit) {
+    val updatedHabit = habitViewModel.markHabitCompletedYesterday(habit) ?: return
+    savingsGoalViewModel.recordEarningsForHabitCompletion(updatedHabit, goal = null, date = updatedHabit.lastCompletedOn!!)
+}
+
 fun toggleHabitToday(habitViewModel: HabitViewModel, savingsGoalViewModel: SavingsGoalViewModel, habit: Habit) {
     if (habit.lastCompletedOn == LocalDate.now()) {
         habitViewModel.unMarkHabitCompletedToday(habit) ?: return

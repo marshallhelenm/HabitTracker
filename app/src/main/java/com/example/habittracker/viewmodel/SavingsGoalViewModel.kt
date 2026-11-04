@@ -213,12 +213,12 @@ class SavingsGoalViewModel(
     // Pays the habit's reward rate × its streak into the habit's own goal, falling back to the pinned goal when the habit is
     // unassigned or its goal is no longer active. Daily caps, target overflow and goal completion are
     // decided by planEarnings. A future many-to-many habit-goal model only needs to change how the
-    // starting goal is resolved here.
-    fun recordEarningsForHabitCompletion(habit: Habit, goal: SavingsGoal?) {
+    // starting goal is resolved here. `date` is the day the check-in counts for; a streak saved
+    // from yesterday pays on yesterday, against yesterday's cap.
+    fun recordEarningsForHabitCompletion(habit: Habit, goal: SavingsGoal?, date: LocalDate = today()) {
         viewModelScope.launch {
             val newNotices = withContext(ioDispatcher) {
                 earningsMutex.withLock {
-                    val date = today()
                     val goals = repository.getSavingsGoals()
                     val byId = goals.associateBy { it.id }
                     val active = { g: SavingsGoal? -> g?.takeIf { it.status == SavingsGoalStatus.ACTIVE } }

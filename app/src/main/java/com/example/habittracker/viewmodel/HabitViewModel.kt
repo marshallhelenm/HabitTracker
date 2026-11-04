@@ -139,6 +139,34 @@ class HabitViewModel(
         return updatedHabit
     }
 
+    // Records a completion for yesterday on a habit whose streak broke at the end of yesterday. The
+    // undo snapshot is cleared since it only covers today's check-in.
+    fun markHabitCompletedYesterday(habit: Habit): Habit? {
+        val today = LocalDate.now()
+        if (!streakBrokeYesterday(habit, today)) {
+            return null
+        }
+
+        val yesterday = today.minusDays(1)
+        val newStreak = streakAfterCompletion(habit, yesterday)
+        val updatedHabit = habit.copy(
+            prevCurrentStreak = null,
+            prevLongestStreak = null,
+            prevLastCompletedOn = null,
+            lastCompletedOn = yesterday,
+            currentStreak = newStreak,
+            longestStreak = maxOf(habit.longestStreak, newStreak)
+        )
+
+        viewModelScope.launch {
+            withContext(Dispatchers.IO) {
+                repository.upsertHabit(updatedHabit)
+            }
+            refresh()
+        }
+        return updatedHabit
+    }
+
     fun unMarkHabitCompletedToday(habit: Habit): Habit? {
         val today = LocalDate.now()
         val alreadyCompletedToday = habit.lastCompletedOn == today

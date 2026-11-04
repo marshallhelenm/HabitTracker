@@ -84,4 +84,32 @@ class StreakRulesTest {
         assertEquals(today.plusDays(1), dueBy(habit(2, today), today))
         assertNull(dueBy(habit(0, null, interval = 3), today))
     }
+
+    @Test
+    fun dailyHabitLastDoneTwoDaysAgo_brokeYesterday() {
+        val h = habit(4, today.minusDays(2))
+        assertTrue(streakBrokeYesterday(h, today))
+        // Counting yesterday continues the streak rather than restarting it.
+        assertEquals(5, streakAfterCompletion(h, today.minusDays(1)))
+    }
+
+    @Test
+    fun dailyHabitDoneYesterday_orMissedLonger_isNotOfferedASave() {
+        assertFalse(streakBrokeYesterday(habit(4, today.minusDays(1)), today))
+        assertFalse(streakBrokeYesterday(habit(4, today.minusDays(3)), today))
+        assertFalse(streakBrokeYesterday(habit(0, null), today))
+    }
+
+    @Test
+    fun customHabitWhoseLastAllowedDayWasYesterday_brokeYesterday() {
+        assertTrue(streakBrokeYesterday(habit(2, today.minusDays(4), interval = 3), today))
+        // Still inside its window, so nothing is broken yet.
+        assertFalse(streakBrokeYesterday(habit(2, today.minusDays(3), interval = 3), today))
+    }
+
+    @Test
+    fun hiddenStreak_isNotOfferedASave() {
+        val h = habit(4, today.minusDays(2)).copy(fixedReward = true, showStreak = false)
+        assertFalse(streakBrokeYesterday(h, today))
+    }
 }

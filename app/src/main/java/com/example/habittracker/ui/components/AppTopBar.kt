@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -25,12 +26,13 @@ import com.example.habittracker.R
 import com.example.habittracker.ui.theme.PiggyPink
 
 // Screens are switched from the bottom bar, so the top bar only shows where you are. Sub-screens pass
-// onBack to get a back arrow in place of the piggy logo.
+// onBack to get a back arrow in place of the piggy logo; top-level screens pass onSettings for a gear.
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AppTopBar(
     title: String,
     onBack: (() -> Unit)? = null,
+    onSettings: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     TopAppBar(
@@ -42,6 +44,13 @@ fun AppTopBar(
             actionIconContentColor = MaterialTheme.colorScheme.onPrimary
         ),
         title = { Text(text = title) },
+        actions = {
+            if (onSettings != null) {
+                IconButton(onClick = onSettings) {
+                    Icon(imageVector = Icons.Filled.Settings, contentDescription = "Settings")
+                }
+            }
+        },
         navigationIcon = {
             if (onBack != null) {
                 IconButton(onClick = onBack) {

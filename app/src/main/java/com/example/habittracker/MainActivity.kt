@@ -9,6 +9,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
 import androidx.compose.runtime.remember
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.habittracker.data.AppSettings
 import com.example.habittracker.data.RoomHabitRepository
 import com.example.habittracker.data.RoomSavingsGoalRepository
 import com.example.habittracker.data.local.HabitTrackerDatabase
@@ -25,6 +26,7 @@ class MainActivity : ComponentActivity() {
             val database = remember { HabitTrackerDatabase.getInstance(applicationContext) }
             val habitRepository = remember { RoomHabitRepository(database.habitDao()) }
             val savingsGoalRepository = remember { RoomSavingsGoalRepository(database.savingsGoalDao(), database.depositDao()) }
+            val appSettings = remember { AppSettings(applicationContext) }
 
             val habitViewModel: HabitViewModel = viewModel(
                 factory = HabitViewModel.factory(habitRepository)
@@ -41,7 +43,8 @@ class MainActivity : ComponentActivity() {
                     ProvideToday {
                         HabitTrackerApp(
                             habitViewModel = habitViewModel,
-                            savingsGoalViewModel = savingsGoalViewModel
+                            savingsGoalViewModel = savingsGoalViewModel,
+                            appSettings = appSettings
                         )
                     }
                 }

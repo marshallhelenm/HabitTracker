@@ -33,3 +33,10 @@ fun streakAfterCompletion(habit: Habit, today: LocalDate): Int {
     val daysSince = ChronoUnit.DAYS.between(last, today)
     return if (daysSince in 1..habit.intervalDays.toLong()) habit.currentStreak + 1 else 1
 }
+
+// True when the streak ran out at the end of yesterday, so a completion recorded for yesterday would
+// still save it. Hidden streaks aren't offered a save, since the user isn't watching them.
+fun streakBrokeYesterday(habit: Habit, today: LocalDate): Boolean {
+    val last = habit.lastCompletedOn ?: return false
+    return habit.showStreak && last.plusDays(habit.intervalDays.toLong()) == today.minusDays(1)
+}

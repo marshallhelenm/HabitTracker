@@ -53,6 +53,10 @@ import com.example.habittracker.viewmodel.SavingsGoalViewModel
 import com.example.habittracker.ui.completeHabit
 import com.example.habittracker.ui.components.PiggyBankCard
 import com.example.habittracker.ui.toggleHabitToday
+import com.example.habittracker.ui.completeHabitYesterday
+import com.example.habittracker.ui.LocalToday
+import com.example.habittracker.data.AppSettings
+import com.example.habittracker.viewmodel.streakBrokeYesterday
 import com.example.habittracker.ui.components.UndoCompletionDialog
 import com.example.habittracker.model.Habit
 import androidx.compose.runtime.remember
@@ -63,10 +67,14 @@ import kotlinx.coroutines.launch
 fun HomeScreen(
     habitViewModel: HabitViewModel,
     savingsGoalViewModel: SavingsGoalViewModel,
+    appSettings: AppSettings,
     onCreateGoal: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val habits = habitViewModel.habits.collectAsStateWithLifecycle().value
+    val today = LocalToday.current
+    val streakSaverEnabled by appSettings.streakSaverEnabled.collectAsStateWithLifecycle()
+    val declinedStreakSaves by appSettings.declinedStreakSaves.collectAsStateWithLifecycle()
     val trackedHabits = habits.filter { it.tracking }
     val allGoals by savingsGoalViewModel.savingsGoals.collectAsStateWithLifecycle()
     val carouselGoals by savingsGoalViewModel.carouselGoals.collectAsStateWithLifecycle()
@@ -197,7 +205,20 @@ fun HomeScreen(
                                 habit.goalId == null -> "Unassigned"
                                 // Linked to a goal that's finished (or gone); it pays in here now.
                                 else -> allGoals.firstOrNull { it.id == habit.goalId }?.let { "${it.name} ✓" } ?: "Unassigned"
-                            }
+                            },
+                            onStreakSaveAnswer = if (
+                                streakSaverEnabled &&
+                                streakBrokeYesterday(habit, today) &&
+                                !declinedStreakSaves.contains(habit.id, today)
+                            ) {
+                                { didIt ->
+                                    if (didIt) {
+                                        completeHabitYesterday(habitViewModel, savingsGoalViewModel, habit)
+                                    } else {
+                                        appSettings.declineStreakSave(habit.id, today)
+                                    }
+                                }
+                            } else null
                         )
                     }
                 }

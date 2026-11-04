@@ -1,6 +1,7 @@
 package com.example.habittracker.ui.components
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
@@ -18,6 +19,7 @@ import androidx.compose.ui.res.painterResource
 import com.example.habittracker.R
 import androidx.compose.material.icons.filled.Savings
 import androidx.compose.material.icons.outlined.RadioButtonUnchecked
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -25,6 +27,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -53,13 +56,47 @@ fun HabitCard(
     goalLabel: String? = null,
     // True on Home, where the card shows what the next check-in pays; elsewhere it shows the rate.
     showNextPayout: Boolean = false,
+    // Set when the streak broke yesterday and can still be saved: covers the card with a
+    // "did you do this yesterday?" prompt, answered true for Yes.
+    onStreakSaveAnswer: ((Boolean) -> Unit)? = null,
     modifier: Modifier = Modifier
+) {
+    Box(modifier = modifier.fillMaxWidth()) {
+        HabitCardContent(
+            habit = habit,
+            onCompleteClick = onCompleteClick,
+            onEditClick = onEditClick,
+            headerActions = headerActions,
+            footerActions = footerActions,
+            goalLabel = goalLabel,
+            showNextPayout = showNextPayout
+        )
+        if (onStreakSaveAnswer != null) {
+            // matchParentSize sizes the overlay to the card without changing the card's own height.
+            StreakSaverOverlay(
+                habitTitle = habit.title,
+                onAnswer = onStreakSaveAnswer,
+                modifier = Modifier.matchParentSize()
+            )
+        }
+    }
+}
+
+@Composable
+private fun HabitCardContent(
+    habit: Habit,
+    onCompleteClick: (() -> Unit)?,
+    onEditClick: (() -> Unit)?,
+    headerActions: (@Composable RowScope.() -> Unit)?,
+    footerActions: (@Composable RowScope.() -> Unit)?,
+    goalLabel: String?,
+    showNextPayout: Boolean
 ) {
     val today = LocalToday.current
     val completedToday = isCompletedOn(habit, today)
 
     Card(
-        modifier = modifier.fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth(),
         shape = MaterialTheme.shapes.medium,
         colors = CardDefaults.cardColors(
             containerColor = if (completedToday) {
@@ -171,6 +208,44 @@ fun HabitCard(
                 if (footerActions != null) {
                     footerActions()
                 }
+            }
+        }
+    }
+}
+
+@Composable
+private fun StreakSaverOverlay(habitTitle: String, onAnswer: (Boolean) -> Unit, modifier: Modifier = Modifier) {
+    Surface(
+        modifier = modifier,
+        shape = MaterialTheme.shapes.medium,
+        // Opaque, since the card's own title sits right under the overlay's and would ghost through.
+        color = MaterialTheme.colorScheme.primaryContainer,
+        contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            // The overlay hides the card underneath, so it names the habit it's asking about.
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = habitTitle,
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Text(
+                    text = "Did you do this yesterday?",
+                    style = MaterialTheme.typography.bodyMedium
+                )
+            }
+            TextButton(onClick = { onAnswer(false) }) {
+                Text("No")
+            }
+            Button(onClick = { onAnswer(true) }) {
+                Text("Yes")
             }
         }
     }
