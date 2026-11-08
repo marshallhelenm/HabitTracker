@@ -29,10 +29,10 @@ class GoalListOrderTest {
 
     private val trip = goal(1, "trip", saved = "10", createdDay = 2, order = 3)
     private val bike = goal(2, "Bike", saved = "90", createdDay = 5, status = SavingsGoalStatus.COMPLETED)
-    private val noodle = goal(3, "Danger Noodle", saved = "20", createdDay = 9, pinned = true)
+    private val newLaptop = goal(3, "New Laptop", saved = "20", createdDay = 9, pinned = true)
     private val laptop = goal(4, "Laptop", saved = "100", createdDay = 1, status = SavingsGoalStatus.ARCHIVED)
     private val amp = goal(5, "Amp", saved = "60", createdDay = 4, order = 1)
-    private val all = listOf(trip, bike, noodle, laptop, amp)
+    private val all = listOf(trip, bike, newLaptop, laptop, amp)
 
     private fun ids(sort: GoalSort, hide: Boolean = false) = goalsForList(all, sort, hide).map { it.id }
 

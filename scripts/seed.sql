@@ -4,8 +4,8 @@
 -- an archived goal (hidden from Home), assigned / unassigned / untracked habits, completed-today habits,
 -- streaks that are alive vs broken, custom-interval habits (every 7 and 3 days), reward rates from 0.25 to 3 coins, a fixed-reward habit with a visible streak and one with the streak hidden, a goal order that differs from creation order, and a habit with a description.
 -- Coin-rule scenarios (completing a habit today):
---   * "Bike to work" (4 coins) fills New Bike (297 of 300) and overflows 1 coin to the pinned Danger Noodle.
---   * Danger Noodle has a 5-coin daily cap with 3 already deposited today, so "Read 20 pages" (1.25 × 13 = 16.25 coins) hits the cap.
+--   * "Bike to work" (4 coins) fills New Bike (297 of 300) and overflows 1 coin to the pinned New Laptop.
+--   * New Laptop has a 5-coin daily cap with 3 already deposited today, so "Read 20 pages" (1.25 × 13 = 16.25 coins) hits the cap.
 --   * Concert Tickets is saved past its target and becomes Completed on load.
 
 DELETE FROM deposits;
@@ -16,12 +16,12 @@ DELETE FROM sqlite_sequence WHERE name IN ('habits', 'savings_goals', 'deposits'
 -- id, name, targetAmount, currentAmount, dueDate, dailyEarningsCap, status, createdAt, pinned, sortOrder
 -- The emergency fund is newest but was moved up to sit right after the pinned goal.
 INSERT INTO savings_goals (id, name, targetAmount, currentAmount, dueDate, dailyEarningsCap, status, createdAt, pinned, sortOrder) VALUES
-  (1, 'Danger Noodle', '2000', '412.50', NULL, '5', 'ACTIVE', strftime('%Y-%m-%dT%H:%M:%S', 'now', 'localtime', '-128 days'), 1, 0),
+  (1, 'New Laptop', '2000', '412.50', NULL, '5', 'ACTIVE', strftime('%Y-%m-%dT%H:%M:%S', 'now', 'localtime', '-128 days'), 1, 0),
   (2, 'New Bike', '300', '297', NULL, NULL, 'ACTIVE', strftime('%Y-%m-%dT%H:%M:%S', 'now', 'localtime', '-84 days'), 0, 2),
   (3, 'Concert Tickets', '150', '162', NULL, '3', 'ACTIVE', strftime('%Y-%m-%dT%H:%M:%S', 'now', 'localtime', '-60 days'), 0, 3),
-  (4, 'Weekend Trip', '900', '0', NULL, NULL, 'ACTIVE', strftime('%Y-%m-%dT%H:%M:%S', 'now', 'localtime', '-17 days'), 0, 4),
+  (4, 'Vacation Savings', '900', '0', NULL, NULL, 'ACTIVE', strftime('%Y-%m-%dT%H:%M:%S', 'now', 'localtime', '-17 days'), 0, 4),
   (5, 'Emergency fund for vet visits and other surprises', '1000', '9', NULL, '2', 'ACTIVE', strftime('%Y-%m-%dT%H:%M:%S', 'now', 'localtime', '-5 days'), 0, 1),
-  (6, 'Old Laptop Fund', '800', '800', NULL, NULL, 'ARCHIVED', strftime('%Y-%m-%dT%H:%M:%S', 'now', 'localtime', '-300 days'), 0, 5);
+  (6, 'Phone Upgrade', '800', '800', NULL, NULL, 'ARCHIVED', strftime('%Y-%m-%dT%H:%M:%S', 'now', 'localtime', '-300 days'), 0, 5);
 
 -- id, title, description, intervalDays, currentStreak, longestStreak, createdAt, lastCompletedOn, tracking, goalId, rewardRate, fixedReward, showStreak
 INSERT INTO habits (id, title, description, intervalDays, currentStreak, longestStreak, createdAt, lastCompletedOn, tracking, goalId, rewardRate, fixedReward, showStreak) VALUES
@@ -45,6 +45,6 @@ INSERT INTO habits (id, title, description, intervalDays, currentStreak, longest
   (12, 'Go to the gym', '', 1, 3, 8, strftime('%Y-%m-%dT%H:%M:%S', 'now', 'localtime', '-45 days'), date('now', 'localtime', '-2 days'), 1, 4, '5', 1, 0);
 
 -- id, goalId, habitId, overflowFromGoalId, amount, depositedOn, createdAt
--- "Morning stretch" (done today) already put 3 coins toward Danger Noodle's 5-coin daily cap.
+-- "Morning stretch" (done today) already put 3 coins toward New Laptop's 5-coin daily cap.
 INSERT INTO deposits (id, goalId, habitId, overflowFromGoalId, amount, depositedOn, createdAt) VALUES
   (1, 1, 2, NULL, '3', date('now', 'localtime'), strftime('%Y-%m-%dT%H:%M:%S', 'now', 'localtime', '-3 hours'));
